@@ -68,54 +68,20 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 type: 'string',
             },
             height: {
-                type: 'string'
-            }
-        }
+                type: 'string',
+            },
+        },
     };
-    const defaultDateFormat = 'DD/MM/YYYY';
-    const defaultDateTimeFormat = 'DD/MM/YYYY HH:mm:ss';
-    const defaultUnits = ['days', 'hours', 'minutes', 'seconds'];
-    const defaultTime = '23:59:59';
-    const unitList = [
-        {
-            value: 'years',
-            label: 'years'
-        },
-        {
-            value: 'months',
-            label: 'months'
-        },
-        {
-            value: 'weeks',
-            label: 'weeks'
-        },
-        {
-            value: 'days',
-            label: 'days'
-        },
-        {
-            value: 'hours',
-            label: 'hours'
-        },
-        {
-            value: 'minutes',
-            label: 'minutes'
-        },
-        {
-            value: 'seconds',
-            label: 'seconds'
-        }
-    ];
+    const defaultDateTimeFormat = 'MM/DD/YYYY HH:mm:ss';
+    const unitOptions = ['days, hours, minutes, seconds', 'days, hours, minutes'];
     let ScomCountDown = class ScomCountDown extends components_2.Module {
         constructor(parent, options) {
             super(parent, options);
             this.data = {
                 date: '',
-                time: ''
             };
             this.oldData = {
                 date: '',
-                time: ''
             };
             if (scconfig_json_1.default)
                 store_1.setDataFromSCConfig(scconfig_json_1.default);
@@ -125,12 +91,14 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             super.init();
             const width = this.getAttribute('width', true);
             const height = this.getAttribute('height', true);
-            this.setTag({ width: width ? this.width : 'auto', height: height ? this.height : 'auto' });
+            this.setTag({
+                width: width ? this.width : 'auto',
+                height: height ? this.height : 'auto',
+            });
             this.data.name = this.getAttribute('name', true);
             this.data.showUTC = this.getAttribute('showUTC', true, false);
-            this.data.date = this.getAttribute('date', true, components_2.moment().format(defaultDateFormat));
-            this.data.time = this.getAttribute('time', true, defaultTime);
-            this.data.units = this.getAttribute('units', true, defaultUnits);
+            this.data.date = this.getAttribute('date', true, components_2.moment().endOf('days').format(defaultDateTimeFormat));
+            this.data.units = this.getAttribute('units', true, unitOptions[0]);
             this.setData(this.data);
             this.isReadyCallbackQueued = false;
             this.executeReadyCallback();
@@ -152,18 +120,14 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             }
         }
         get date() {
-            var _a;
-            return (_a = this.data.date) !== null && _a !== void 0 ? _a : '';
+            let end = components_2.moment(this.data.date);
+            if (!end.isValid())
+                end = components_2.moment(this.data.date, defaultDateTimeFormat);
+            const utcDate = components_2.moment(this.data.date);
+            return end.isValid() ? utcDate.format(defaultDateTimeFormat) : '';
         }
         set date(value) {
             this.data.date = value;
-        }
-        get time() {
-            var _a;
-            return (_a = this.data.time) !== null && _a !== void 0 ? _a : '';
-        }
-        set time(value) {
-            this.data.time = value;
         }
         get showUTC() {
             var _a;
@@ -174,14 +138,14 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             if (this.lbUTC)
                 this.lbUTC.visible = this.showUTC;
         }
-        get units() {
-            var _a, _b;
-            if ((_b = (_a = this.data) === null || _a === void 0 ? void 0 : _a.units) === null || _b === void 0 ? void 0 : _b.length)
-                return unitList.filter(unit => this.data.units.includes(unit.value));
-            return [...unitList].filter(unit => defaultUnits.includes(unit.value));
+        get unitArray() {
+            return this.units.split(',').map(unit => unit.trim());
         }
-        set units(values) {
-            this.data.units = (values === null || values === void 0 ? void 0 : values.length) ? values : defaultUnits;
+        get units() {
+            return this.data.units || unitOptions[0];
+        }
+        set units(value) {
+            this.data.units = value || unitOptions[0];
         }
         getConfigSchema() {
             return configSchema;
@@ -192,58 +156,67 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         async setData(value) {
             this.oldData = this.data;
             this.data = value;
-            !this.lbName.isConnected && await this.lbName.ready();
-            !this.lbUTC.isConnected && await this.lbUTC.ready();
+            !this.lbName.isConnected && (await this.lbName.ready());
+            !this.lbUTC.isConnected && (await this.lbUTC.ready());
             if (this.lbName) {
                 this.lbName.visible = !!this.data.name;
                 this.lbName.caption = this.data.name;
             }
-            if (this.lbUTC)
+            if (this.lbUTC) {
                 this.lbUTC.visible = this.showUTC;
+                this.lbUTC.caption = components_2.moment.utc(this.date).toString();
+            }
             this.renderUI();
             this.timer && clearInterval(this.timer);
             this.timer = setInterval(() => this.renderUI(), 1000);
         }
         renderCountItem(unit, value) {
-            const itemEl = (this.$render("i-vstack", { verticalAlignment: "center", horizontalAlignment: "center" },
+            const itemEl = (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center' },
                 this.$render("i-label", { caption: `${value < 10 ? '0' + value : value}`, font: { size: '7.688rem' } }),
-                this.$render("i-label", { caption: unit.label, font: { size: '1.5rem' } })));
+                this.$render("i-label", { caption: unit, font: { size: '1.5rem' } })));
             return itemEl;
         }
         clearCountdown() {
             this.lbUTC.caption = '';
             this.pnlCounter.clearInnerHTML();
-            for (let unit of this.units) {
-                const value = this.getValue(unit.value, 0);
+            for (let unit of this.unitArray) {
+                const value = this.getValue(unit, 0);
                 const el = this.renderCountItem(unit, value);
                 el && this.pnlCounter.appendChild(el);
             }
         }
-        isTimeout(duration) {
-            return duration <= 0;
-        }
         getValue(unit, duration) {
             let value = 0;
-            if (duration <= 0)
-                return 0;
             switch (unit) {
                 case 'seconds':
-                    value = this.data.units.includes('minutes') ? duration.seconds() : Math.floor(duration.asSeconds());
+                    value = this.unitArray.includes('minutes')
+                        ? duration.seconds()
+                        : Math.floor(duration.asSeconds());
                     break;
                 case 'minutes':
-                    value = this.data.units.includes('hours') ? duration.minutes() : Math.floor(duration.asMinutes());
+                    value = this.unitArray.includes('hours')
+                        ? duration.minutes()
+                        : Math.floor(duration.asMinutes());
                     break;
                 case 'hours':
-                    value = this.data.units.includes('days') ? duration.hours() : Math.floor(duration.asHours());
+                    value = this.unitArray.includes('days')
+                        ? duration.hours()
+                        : Math.floor(duration.asHours());
                     break;
                 case 'days':
-                    value = this.data.units.includes('weeks') ? duration.days() : Math.floor(duration.asDays());
+                    value = this.unitArray.includes('weeks')
+                        ? duration.days()
+                        : Math.floor(duration.asDays());
                     break;
                 case 'weeks':
-                    value = this.data.units.includes('months') ? duration.weeks() : Math.floor(duration.asWeeks());
+                    value = this.unitArray.includes('months')
+                        ? duration.weeks()
+                        : Math.floor(duration.asWeeks());
                     break;
                 case 'months':
-                    value = this.data.units.includes('years') ? duration.months() : Math.floor(duration.asMonths());
+                    value = this.unitArray.includes('years')
+                        ? duration.months()
+                        : Math.floor(duration.asMonths());
                     break;
                 case 'years':
                     value = duration.years();
@@ -253,20 +226,17 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         }
         renderUI() {
             const now = components_2.moment();
-            const dateTime = `${this.data.date} ${this.data.time || '00:00:00'}`;
-            let end = components_2.moment(dateTime);
-            if (!end.isValid())
-                end = components_2.moment(dateTime, defaultDateTimeFormat);
+            let end = components_2.moment(this.date);
             if (end.isValid()) {
-                this.lbUTC.caption = components_2.moment.utc(end.format('YYYY-MM-DD HH:mm:ss')).toString();
                 const duration = components_2.moment.duration(end.diff(now));
                 this.pnlCounter.clearInnerHTML();
-                for (let unit of this.units) {
-                    const value = this.getValue(unit.value, duration);
+                for (let unit of this.unitArray) {
+                    const value = this.getValue(unit, duration);
                     const el = this.renderCountItem(unit, value);
                     el && this.pnlCounter.appendChild(el);
-                    if (this.isTimeout(duration)) {
+                    if (end.diff(now) <= 0) {
                         this.timer && clearInterval(this.timer);
+                        this.clearCountdown();
                         return;
                     }
                 }
@@ -286,34 +256,25 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         }
         getPropertiesSchema() {
             return {
-                "type": "object",
-                "properties": {
-                    "date": {
-                        type: "string",
-                        format: 'date'
+                type: 'object',
+                properties: {
+                    date: {
+                        type: 'string',
+                        format: 'date-time',
                     },
-                    "time": {
-                        type: "string",
-                        format: 'time'
+                    name: {
+                        type: 'string',
                     },
-                    "name": {
-                        type: "string"
-                    },
-                    "showUTC": {
-                        "title": "Show UTC",
+                    showUTC: {
+                        title: 'Show UTC',
                         default: false,
-                        type: "boolean"
+                        type: 'boolean',
                     },
-                    "units": {
-                        type: "array",
-                        uniqueItems: true,
-                        items: {
-                            type: 'string',
-                            title: 'Unit',
-                            enum: unitList.map(item => item.value)
-                        }
-                    }
-                }
+                    units: {
+                        type: 'string',
+                        enum: unitOptions,
+                    },
+                },
             };
         }
         getEmbedderActions() {
@@ -323,13 +284,13 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 properties: {
                     width: {
                         type: 'string',
-                        readOnly: true
+                        readOnly: true,
                     },
                     height: {
                         type: 'string',
-                        readOnly: true
-                    }
-                }
+                        readOnly: true,
+                    },
+                },
             };
             return this._getActions(propertiesSchema, themeSchema);
         }
@@ -339,12 +300,12 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 type: 'object',
                 properties: {
                     width: {
-                        type: 'string'
+                        type: 'string',
                     },
                     height: {
-                        type: 'string'
-                    }
-                }
+                        type: 'string',
+                    },
+                },
             };
             return this._getActions(propertiesSchema, themeSchema);
         }
@@ -356,10 +317,6 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                     command: (builder, userInputData) => {
                         return {
                             execute: () => {
-                                if (userInputData.units) {
-                                    const units = [...userInputData.units];
-                                    userInputData.units = units.map(unit => unit.units);
-                                }
                                 if (builder === null || builder === void 0 ? void 0 : builder.setData)
                                     builder.setData(userInputData);
                                 this.setData(userInputData);
@@ -369,19 +326,19 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                                     builder.setData(this.oldData);
                                 this.setData(this.oldData);
                             },
-                            redo: () => { }
+                            redo: () => { },
                         };
                     },
-                    userInputDataSchema: settingSchema
-                }
+                    userInputDataSchema: settingSchema,
+                },
             ];
             return actions;
         }
         render() {
-            return (this.$render("i-vstack", { id: "pnlWrap", verticalAlignment: "center", horizontalAlignment: "center", gap: "1rem", class: "text-center" },
-                this.$render("i-label", { id: "lbName", font: { size: '2rem', bold: true }, width: "100%", margin: { bottom: '1rem' } }),
-                this.$render("i-label", { id: "lbUTC", visible: false, width: "100%" }),
-                this.$render("i-hstack", { id: "pnlCounter", gap: "3rem", margin: { top: '1rem' }, horizontalAlignment: "center", verticalAlignment: "center" })));
+            return (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center', gap: '1rem', class: 'text-center' },
+                this.$render("i-label", { id: 'lbName', font: { size: '2rem', bold: true }, width: '100%', margin: { bottom: '1rem' } }),
+                this.$render("i-label", { id: 'lbUTC', visible: false, width: '100%' }),
+                this.$render("i-hstack", { id: 'pnlCounter', gap: '3rem', margin: { top: '1rem' }, horizontalAlignment: 'center', verticalAlignment: 'center' })));
         }
     };
     ScomCountDown = __decorate([
