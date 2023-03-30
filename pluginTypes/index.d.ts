@@ -30,10 +30,9 @@ declare module "@scom/scom-countdown/interface.ts" {
     }
     export interface IData {
         date: string;
-        time: string;
         name?: string;
         showUTC?: boolean;
-        units?: string[];
+        units?: string;
     }
 }
 /// <amd-module name="@scom/scom-countdown/store.ts" />
@@ -67,22 +66,20 @@ declare module "@scom/scom-countdown" {
     import "@scom/scom-countdown/index.css.ts";
     interface ScomCountDownElement extends ControlElement {
         date?: string;
-        time?: string;
         name?: string;
         showUTC?: boolean;
-        units?: string[];
+        units?: string;
     }
     global {
         namespace JSX {
             interface IntrinsicElements {
-                ["i-scom-countdown"]: ScomCountDownElement;
+                ['i-scom-countdown']: ScomCountDownElement;
             }
         }
     }
     export default class ScomCountDown extends Module implements PageBlock {
         private data;
         private oldData;
-        private pnlWrap;
         private pnlCounter;
         private lbName;
         private lbUTC;
@@ -103,12 +100,11 @@ declare module "@scom/scom-countdown" {
         set name(value: string);
         get date(): string;
         set date(value: string);
-        get time(): string;
-        set time(value: string);
         get showUTC(): boolean;
         set showUTC(value: boolean);
-        get units(): any[];
-        set units(values: string[]);
+        get unitArray(): string[];
+        get units(): string;
+        set units(value: string);
         getConfigSchema(): {
             type: string;
             required: any[];
@@ -125,7 +121,6 @@ declare module "@scom/scom-countdown" {
         setData(value: IData): Promise<void>;
         private renderCountItem;
         clearCountdown(): void;
-        private isTimeout;
         private getValue;
         private renderUI;
         getTag(): any;

@@ -38,8 +38,7 @@ export interface PageBlock {
 
 export interface IData {
 	date: string;
-  time: string;
   name?: string;
   showUTC?: boolean;
-  units?: string[];
+  units?: string;
 }

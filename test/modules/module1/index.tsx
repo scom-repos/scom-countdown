@@ -14,8 +14,7 @@ export default class Module1 extends Module {
     this.countdownEl = await ScomCountDown.create({
         id: 'countdown0',
         name: 'My countdown',
-        date: '03-30-2023',
-        time: '17:00',
+        date: '03-30-2023 20:00',
         showUTC: true
     })
     this.mainStack.appendChild(this.countdownEl)
@@ -33,7 +32,7 @@ export default class Module1 extends Module {
             id='countdown1'
             name='Countdown to Launch!'
             date='01/01/2024'
-            units={['hours', 'seconds']}
+            units="days, hours, minutes"
             showUTC={true}
           ></i-scom-countdown>
         </i-vstack>
