@@ -60,6 +60,7 @@ define("@scom/scom-countdown/scconfig.json.ts", ["require", "exports"], function
 define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@scom/scom-countdown/store.ts", "@scom/scom-countdown/scconfig.json.ts", "@scom/scom-countdown/index.css.ts"], function (require, exports, components_2, store_1, scconfig_json_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_2.Styles.Theme.ThemeVars;
     const configSchema = {
         type: 'object',
         required: [],
@@ -83,6 +84,8 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             this.oldData = {
                 date: '',
             };
+            this.tag = {};
+            this.oldTag = {};
             if (scconfig_json_1.default)
                 store_1.setDataFromSCConfig(scconfig_json_1.default);
         }
@@ -91,7 +94,6 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             super.init();
             const width = this.getAttribute('width', true);
             const height = this.getAttribute('height', true);
-            console.log(height);
             this.setTag({
                 width: width ? this.width : 'auto',
                 height: height ? this.height : 'auto',
@@ -173,8 +175,8 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         }
         renderCountItem(unit, value) {
             const itemEl = (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center' },
-                this.$render("i-label", { caption: `${value < 10 ? '0' + value : value}`, font: { size: '7.688rem' } }),
-                this.$render("i-label", { caption: unit, font: { size: '1.5rem' } })));
+                this.$render("i-label", { caption: `${value < 10 ? '0' + value : value}`, font: { size: '7.688rem', color: Theme.text.primary } }),
+                this.$render("i-label", { caption: unit, font: { size: '1.5rem', color: Theme.text.primary } })));
             return itemEl;
         }
         clearCountdown() {
@@ -248,10 +250,25 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             return this.tag;
         }
         async setTag(value) {
-            this.tag = value;
+            const newValue = value || {};
+            for (let prop in newValue) {
+                if (newValue.hasOwnProperty(prop))
+                    this.tag[prop] = newValue[prop];
+            }
+            this.updateTheme();
             this.display = 'block';
             this.width = this.tag.width;
             this.height = this.tag.height;
+        }
+        updateStyle(name, value) {
+            value ?
+                this.style.setProperty(name, value) :
+                this.style.removeProperty(name);
+        }
+        updateTheme() {
+            var _a, _b;
+            this.updateStyle('--text-primary', (_a = this.tag) === null || _a === void 0 ? void 0 : _a.fontColor);
+            this.updateStyle('--background-main', (_b = this.tag) === null || _b === void 0 ? void 0 : _b.backgroundColor);
         }
         getPropertiesSchema() {
             return {
@@ -281,15 +298,17 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             const themeSchema = {
                 type: 'object',
                 properties: {
-                    width: {
+                    backgroundColor: {
                         type: 'string',
-                        readOnly: true,
+                        format: 'color',
+                        readOnly: true
                     },
-                    height: {
+                    fontColor: {
                         type: 'string',
-                        readOnly: true,
-                    },
-                },
+                        format: 'color',
+                        readOnly: true
+                    }
+                }
             };
             return this._getActions(propertiesSchema, themeSchema);
         }
@@ -298,13 +317,15 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             const themeSchema = {
                 type: 'object',
                 properties: {
-                    width: {
+                    backgroundColor: {
                         type: 'string',
+                        format: 'color'
                     },
-                    height: {
+                    fontColor: {
                         type: 'string',
-                    },
-                },
+                        format: 'color'
+                    }
+                }
             };
             return this._getActions(propertiesSchema, themeSchema);
         }
@@ -319,24 +340,52 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                                 if (builder === null || builder === void 0 ? void 0 : builder.setData)
                                     builder.setData(userInputData);
                                 this.setData(userInputData);
+                                this.height = 'auto';
                             },
                             undo: () => {
                                 if (builder === null || builder === void 0 ? void 0 : builder.setData)
                                     builder.setData(this.oldData);
                                 this.setData(this.oldData);
+                                this.height = 'auto';
                             },
                             redo: () => { },
                         };
                     },
                     userInputDataSchema: settingSchema,
                 },
+                {
+                    name: 'Theme Settings',
+                    icon: 'palette',
+                    command: (builder, userInputData) => {
+                        return {
+                            execute: async () => {
+                                if (!userInputData)
+                                    return;
+                                this.oldTag = Object.assign({}, this.tag);
+                                if (builder)
+                                    builder.setTag(userInputData);
+                                this.setTag(userInputData);
+                            },
+                            undo: () => {
+                                if (!userInputData)
+                                    return;
+                                this.tag = Object.assign({}, this.oldTag);
+                                if (builder)
+                                    builder.setTag(this.tag);
+                                this.setTag(this.tag);
+                            },
+                            redo: () => { }
+                        };
+                    },
+                    userInputDataSchema: themeSchema
+                }
             ];
             return actions;
         }
         render() {
-            return (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center', class: 'text-center' },
-                this.$render("i-label", { id: 'lbName', font: { size: '2rem', bold: true }, width: '100%', margin: { bottom: '1rem' } }),
-                this.$render("i-label", { id: 'lbUTC', visible: false, width: '100%' }),
+            return (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center', class: 'text-center', padding: { left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem' }, background: { color: Theme.background.main } },
+                this.$render("i-label", { id: 'lbName', font: { size: '2rem', bold: true, color: Theme.text.primary }, width: '100%', margin: { bottom: '1rem' } }),
+                this.$render("i-label", { id: 'lbUTC', visible: false, width: '100%', font: { color: Theme.text.primary } }),
                 this.$render("i-hstack", { id: 'pnlCounter', gap: '3rem', margin: { top: '1rem' }, horizontalAlignment: 'center', verticalAlignment: 'center' })));
         }
     };

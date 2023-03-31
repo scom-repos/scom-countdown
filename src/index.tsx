@@ -8,11 +8,13 @@ import {
   Label,
   HStack,
   moment,
+  Styles
 } from '@ijstech/components'
 import { IData, PageBlock } from './interface'
 import { setDataFromSCConfig } from './store'
 import './index.css'
 import scconfig from './scconfig.json'
+const Theme = Styles.Theme.ThemeVars
 
 const configSchema = {
   type: 'object',
@@ -61,7 +63,8 @@ export default class ScomCountDown extends Module implements PageBlock {
 
   private timer: any
 
-  tag: any
+  tag: any = {}
+  private oldTag: any = {}
 
   readonly onConfirm: () => Promise<void>
   readonly onDiscard: () => Promise<void>
@@ -178,9 +181,9 @@ export default class ScomCountDown extends Module implements PageBlock {
       <i-vstack verticalAlignment='center' horizontalAlignment='center'>
         <i-label
           caption={`${value < 10 ? '0' + value : value}`}
-          font={{ size: '7.688rem' }}
+          font={{ size: '7.688rem', color: Theme.text.primary }}
         ></i-label>
-        <i-label caption={unit} font={{ size: '1.5rem' }}></i-label>
+        <i-label caption={unit} font={{ size: '1.5rem', color: Theme.text.primary }}></i-label>
       </i-vstack>
     )
     return itemEl
@@ -261,10 +264,26 @@ export default class ScomCountDown extends Module implements PageBlock {
   }
 
   async setTag(value: any) {
-    this.tag = value
+    const newValue = value || {};
+    for (let prop in newValue) {
+      if (newValue.hasOwnProperty(prop))
+        this.tag[prop] = newValue[prop];
+    }
+    this.updateTheme();
     this.display = 'block'
     this.width = this.tag.width
     this.height = this.tag.height
+  }
+
+  private updateStyle(name: string, value: any) {
+    value ?
+      this.style.setProperty(name, value) :
+      this.style.removeProperty(name);
+  }
+
+  private updateTheme() {
+    this.updateStyle('--text-primary', this.tag?.fontColor);
+    this.updateStyle('--background-main', this.tag?.backgroundColor);
   }
 
   private getPropertiesSchema() {
@@ -297,15 +316,17 @@ export default class ScomCountDown extends Module implements PageBlock {
     const themeSchema: IDataSchema = {
       type: 'object',
       properties: {
-        width: {
+        backgroundColor: {
           type: 'string',
-          readOnly: true,
+          format: 'color',
+          readOnly: true
         },
-        height: {
+        fontColor: {
           type: 'string',
-          readOnly: true,
-        },
-      },
+          format: 'color',
+          readOnly: true
+        }
+      }
     }
 
     return this._getActions(propertiesSchema, themeSchema)
@@ -317,13 +338,15 @@ export default class ScomCountDown extends Module implements PageBlock {
     const themeSchema: IDataSchema = {
       type: 'object',
       properties: {
-        width: {
+        backgroundColor: {
           type: 'string',
+          format: 'color'
         },
-        height: {
+        fontColor: {
           type: 'string',
-        },
-      },
+          format: 'color'
+        }
+      }
     }
 
     return this._getActions(propertiesSchema, themeSchema)
@@ -351,6 +374,29 @@ export default class ScomCountDown extends Module implements PageBlock {
         },
         userInputDataSchema: settingSchema as IDataSchema,
       },
+      {
+        name: 'Theme Settings',
+        icon: 'palette',
+        command: (builder: any, userInputData: any) => {
+          return {
+            execute: async () => {
+              if (!userInputData) return;
+              this.oldTag = { ...this.tag };
+              if (builder) builder.setTag(userInputData);
+              this.setTag(userInputData);
+
+            },
+            undo: () => {
+              if (!userInputData) return;
+              this.tag = { ...this.oldTag };
+              if (builder) builder.setTag(this.tag);
+              this.setTag(this.tag);
+            },
+            redo: () => { }
+          }
+        },
+        userInputDataSchema: themeSchema
+      }
     ]
     return actions
   }
@@ -361,14 +407,16 @@ export default class ScomCountDown extends Module implements PageBlock {
         verticalAlignment='center'
         horizontalAlignment='center'
         class='text-center'
+        padding={{left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem'}}
+        background={{color: Theme.background.main}}
       >
         <i-label
           id='lbName'
-          font={{ size: '2rem', bold: true }}
+          font={{ size: '2rem', bold: true, color: Theme.text.primary }}
           width='100%'
           margin={{ bottom: '1rem' }}
         ></i-label>
-        <i-label id='lbUTC' visible={false} width='100%'></i-label>
+        <i-label id='lbUTC' visible={false} width='100%' font={{color: Theme.text.primary}}></i-label>
         <i-hstack
           id='pnlCounter'
           gap='3rem'

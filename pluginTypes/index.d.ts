@@ -85,6 +85,7 @@ declare module "@scom/scom-countdown" {
         private lbUTC;
         private timer;
         tag: any;
+        private oldTag;
         readonly onConfirm: () => Promise<void>;
         readonly onDiscard: () => Promise<void>;
         readonly onEdit: () => Promise<void>;
@@ -125,6 +126,8 @@ declare module "@scom/scom-countdown" {
         private renderUI;
         getTag(): any;
         setTag(value: any): Promise<void>;
+        private updateStyle;
+        private updateTheme;
         private getPropertiesSchema;
         getEmbedderActions(): {
             name: string;
