@@ -165,7 +165,7 @@ export default class ScomCountDown extends Module implements PageBlock {
     }
     if (this.lbUTC) {
       this.lbUTC.visible = this.showUTC
-      this.lbUTC.caption = moment.utc(this.date).toString()
+      this.lbUTC.caption = this.date ? moment.utc(this.date).toString() : ''
     }
 
     this.renderUI()
@@ -187,13 +187,12 @@ export default class ScomCountDown extends Module implements PageBlock {
   }
 
   clearCountdown() {
-    this.lbUTC.caption = ''
     this.pnlCounter.clearInnerHTML()
     for (let unit of this.unitArray) {
-      const value = this.getValue(unit, 0)
-      const el = this.renderCountItem(unit, value)
+      const el = this.renderCountItem(unit, 0)
       el && this.pnlCounter.appendChild(el)
     }
+    this.timer && clearInterval(this.timer)
   }
 
   private getValue(unit: string, duration: any) {
@@ -239,21 +238,21 @@ export default class ScomCountDown extends Module implements PageBlock {
   private renderUI() {
     const now = moment()
     let end = moment(this.date)
-    if (end.isValid()) {
-      const duration = moment.duration(end.diff(now))
-      this.pnlCounter.clearInnerHTML()
-      for (let unit of this.unitArray) {
-        const value = this.getValue(unit, duration)
-        const el = this.renderCountItem(unit, value)
-        el && this.pnlCounter.appendChild(el)
-        if (end.diff(now) <= 0) {
-          this.timer && clearInterval(this.timer)
-          this.clearCountdown()
-          return
-        }
-      }
-    } else {
+    const isTimeout = end.diff(now) <= 0
+    if (isTimeout || !end.isValid()) {
       this.clearCountdown()
+      return
+    }
+    this.pnlCounter.clearInnerHTML()
+    const duration = moment.duration(end.diff(now))
+    for (let unit of this.unitArray) {
+      const value = this.getValue(unit, duration)
+      const el = this.renderCountItem(unit, value)
+      el && this.pnlCounter.appendChild(el)
+      if (end.diff(now) <= 0) {
+        this.clearCountdown()
+        return
+      }
     }
   }
 
@@ -340,10 +339,12 @@ export default class ScomCountDown extends Module implements PageBlock {
             execute: () => {
               if (builder?.setData) builder.setData(userInputData)
               this.setData(userInputData)
+              this.height = 'auto'
             },
             undo: () => {
               if (builder?.setData) builder.setData(this.oldData)
               this.setData(this.oldData)
+              this.height = 'auto'
             },
             redo: () => {},
           }
@@ -359,7 +360,6 @@ export default class ScomCountDown extends Module implements PageBlock {
       <i-vstack
         verticalAlignment='center'
         horizontalAlignment='center'
-        gap='1rem'
         class='text-center'
       >
         <i-label
