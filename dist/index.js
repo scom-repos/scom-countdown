@@ -91,6 +91,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             super.init();
             const width = this.getAttribute('width', true);
             const height = this.getAttribute('height', true);
+            console.log(height);
             this.setTag({
                 width: width ? this.width : 'auto',
                 height: height ? this.height : 'auto',
@@ -164,7 +165,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             }
             if (this.lbUTC) {
                 this.lbUTC.visible = this.showUTC;
-                this.lbUTC.caption = components_2.moment.utc(this.date).toString();
+                this.lbUTC.caption = this.date ? components_2.moment.utc(this.date).toString() : '';
             }
             this.renderUI();
             this.timer && clearInterval(this.timer);
@@ -177,13 +178,12 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             return itemEl;
         }
         clearCountdown() {
-            this.lbUTC.caption = '';
             this.pnlCounter.clearInnerHTML();
             for (let unit of this.unitArray) {
-                const value = this.getValue(unit, 0);
-                const el = this.renderCountItem(unit, value);
+                const el = this.renderCountItem(unit, 0);
                 el && this.pnlCounter.appendChild(el);
             }
+            this.timer && clearInterval(this.timer);
         }
         getValue(unit, duration) {
             let value = 0;
@@ -227,22 +227,21 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         renderUI() {
             const now = components_2.moment();
             let end = components_2.moment(this.date);
-            if (end.isValid()) {
-                const duration = components_2.moment.duration(end.diff(now));
-                this.pnlCounter.clearInnerHTML();
-                for (let unit of this.unitArray) {
-                    const value = this.getValue(unit, duration);
-                    const el = this.renderCountItem(unit, value);
-                    el && this.pnlCounter.appendChild(el);
-                    if (end.diff(now) <= 0) {
-                        this.timer && clearInterval(this.timer);
-                        this.clearCountdown();
-                        return;
-                    }
-                }
-            }
-            else {
+            const isTimeout = end.diff(now) <= 0;
+            if (isTimeout || !end.isValid()) {
                 this.clearCountdown();
+                return;
+            }
+            this.pnlCounter.clearInnerHTML();
+            const duration = components_2.moment.duration(end.diff(now));
+            for (let unit of this.unitArray) {
+                const value = this.getValue(unit, duration);
+                const el = this.renderCountItem(unit, value);
+                el && this.pnlCounter.appendChild(el);
+                if (end.diff(now) <= 0) {
+                    this.clearCountdown();
+                    return;
+                }
             }
         }
         getTag() {
@@ -335,7 +334,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             return actions;
         }
         render() {
-            return (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center', gap: '1rem', class: 'text-center' },
+            return (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center', class: 'text-center' },
                 this.$render("i-label", { id: 'lbName', font: { size: '2rem', bold: true }, width: '100%', margin: { bottom: '1rem' } }),
                 this.$render("i-label", { id: 'lbUTC', visible: false, width: '100%' }),
                 this.$render("i-hstack", { id: 'pnlCounter', gap: '3rem', margin: { top: '1rem' }, horizontalAlignment: 'center', verticalAlignment: 'center' })));
