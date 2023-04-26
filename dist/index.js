@@ -54,6 +54,9 @@ define("@scom/scom-countdown/scconfig.json.ts", ["require", "exports"], function
         "moduleDir": "src",
         "main": "@scom-countdown/main",
         "modules": {},
+        "dependencies": {
+            "@scom/scom-dapp-container": "*"
+        },
         "ipfsGatewayUrl": "https://ipfs.scom.dev/ipfs/"
     };
 });
@@ -102,6 +105,8 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             this.data.showUTC = this.getAttribute('showUTC', true, false);
             this.data.date = this.getAttribute('date', true, components_2.moment().endOf('days').format(defaultDateTimeFormat));
             this.data.units = this.getAttribute('units', true, unitOptions[0]);
+            this.data.showHeader = this.getAttribute('showHeader', true, true);
+            this.data.showFooter = this.getAttribute('showFooter', true, true);
             this.setData(this.data);
             this.isReadyCallbackQueued = false;
             this.executeReadyCallback();
@@ -149,6 +154,24 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         }
         set units(value) {
             this.data.units = value || unitOptions[0];
+        }
+        get showFooter() {
+            var _a;
+            return (_a = this.data.showFooter) !== null && _a !== void 0 ? _a : true;
+        }
+        set showFooter(value) {
+            this.data.showFooter = value;
+            if (this.dappContainer)
+                this.dappContainer.showFooter = this.showFooter;
+        }
+        get showHeader() {
+            var _a;
+            return (_a = this.data.showHeader) !== null && _a !== void 0 ? _a : true;
+        }
+        set showHeader(value) {
+            this.data.showHeader = value;
+            if (this.dappContainer)
+                this.dappContainer.showHeader = this.showHeader;
         }
         getConfigSchema() {
             return configSchema;
@@ -227,6 +250,14 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             return value;
         }
         renderUI() {
+            var _a;
+            const data = {
+                showWalletNetwork: false,
+                showFooter: this.showFooter,
+                showHeader: this.showHeader
+            };
+            if ((_a = this.dappContainer) === null || _a === void 0 ? void 0 : _a.setData)
+                this.dappContainer.setData(data);
             const now = components_2.moment();
             let end = components_2.moment(this.date);
             const isTimeout = end.diff(now) <= 0;
@@ -249,12 +280,22 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         getTag() {
             return this.tag;
         }
-        async setTag(value) {
-            const newValue = value || {};
-            for (let prop in newValue) {
-                if (newValue.hasOwnProperty(prop))
-                    this.tag[prop] = newValue[prop];
+        updateTag(type, value) {
+            var _a;
+            this.tag[type] = (_a = this.tag[type]) !== null && _a !== void 0 ? _a : {};
+            for (let prop in value) {
+                if (value.hasOwnProperty(prop))
+                    this.tag[type][prop] = value[prop];
             }
+        }
+        async setTag(value, init) {
+            const newValue = value || {};
+            if (newValue.light)
+                this.updateTag('light', newValue.light);
+            if (newValue.dark)
+                this.updateTag('dark', newValue.dark);
+            if (this.dappContainer && !init)
+                this.dappContainer.setTag(this.tag);
             this.updateTheme();
             this.display = 'block';
             this.width = this.tag.width;
@@ -266,9 +307,10 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 this.style.removeProperty(name);
         }
         updateTheme() {
-            var _a, _b;
-            this.updateStyle('--text-primary', (_a = this.tag) === null || _a === void 0 ? void 0 : _a.fontColor);
-            this.updateStyle('--background-main', (_b = this.tag) === null || _b === void 0 ? void 0 : _b.backgroundColor);
+            var _a, _b, _c;
+            const themeVar = ((_a = this.dappContainer) === null || _a === void 0 ? void 0 : _a.theme) || 'light';
+            this.updateStyle('--text-primary', (_b = this.tag[themeVar]) === null || _b === void 0 ? void 0 : _b.fontColor);
+            this.updateStyle('--background-main', (_c = this.tag[themeVar]) === null || _c === void 0 ? void 0 : _c.backgroundColor);
         }
         getPropertiesSchema() {
             return {
@@ -298,15 +340,35 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             const themeSchema = {
                 type: 'object',
                 properties: {
-                    backgroundColor: {
-                        type: 'string',
-                        format: 'color',
-                        readOnly: true
+                    dark: {
+                        type: 'object',
+                        properties: {
+                            backgroundColor: {
+                                type: 'string',
+                                format: 'color',
+                                readOnly: true
+                            },
+                            fontColor: {
+                                type: 'string',
+                                format: 'color',
+                                readOnly: true
+                            }
+                        }
                     },
-                    fontColor: {
-                        type: 'string',
-                        format: 'color',
-                        readOnly: true
+                    light: {
+                        type: 'object',
+                        properties: {
+                            backgroundColor: {
+                                type: 'string',
+                                format: 'color',
+                                readOnly: true
+                            },
+                            fontColor: {
+                                type: 'string',
+                                format: 'color',
+                                readOnly: true
+                            }
+                        }
                     }
                 }
             };
@@ -317,13 +379,31 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             const themeSchema = {
                 type: 'object',
                 properties: {
-                    backgroundColor: {
-                        type: 'string',
-                        format: 'color'
+                    dark: {
+                        type: 'object',
+                        properties: {
+                            backgroundColor: {
+                                type: 'string',
+                                format: 'color'
+                            },
+                            fontColor: {
+                                type: 'string',
+                                format: 'color'
+                            }
+                        }
                     },
-                    fontColor: {
-                        type: 'string',
-                        format: 'color'
+                    light: {
+                        type: 'object',
+                        properties: {
+                            backgroundColor: {
+                                type: 'string',
+                                format: 'color'
+                            },
+                            fontColor: {
+                                type: 'string',
+                                format: 'color'
+                            }
+                        }
                     }
                 }
             };
@@ -364,7 +444,10 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                                 this.oldTag = Object.assign({}, this.tag);
                                 if (builder)
                                     builder.setTag(userInputData);
-                                this.setTag(userInputData);
+                                else
+                                    this.setTag(userInputData);
+                                if (this.dappContainer)
+                                    this.dappContainer.setTag(userInputData);
                             },
                             undo: () => {
                                 if (!userInputData)
@@ -372,7 +455,10 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                                 this.tag = Object.assign({}, this.oldTag);
                                 if (builder)
                                     builder.setTag(this.tag);
-                                this.setTag(this.tag);
+                                else
+                                    this.setTag(this.tag);
+                                if (this.dappContainer)
+                                    this.dappContainer.setTag(this.tag);
                             },
                             redo: () => { }
                         };
@@ -383,10 +469,11 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             return actions;
         }
         render() {
-            return (this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center', class: 'text-center', padding: { left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem' }, background: { color: Theme.background.main } },
-                this.$render("i-label", { id: 'lbName', font: { size: '2rem', bold: true, color: Theme.text.primary }, width: '100%', margin: { bottom: '1rem' } }),
-                this.$render("i-label", { id: 'lbUTC', visible: false, width: '100%', font: { color: Theme.text.primary } }),
-                this.$render("i-hstack", { id: 'pnlCounter', gap: '3rem', margin: { top: '1rem' }, horizontalAlignment: 'center', verticalAlignment: 'center' })));
+            return (this.$render("i-scom-dapp-container", { id: "dappContainer" },
+                this.$render("i-vstack", { verticalAlignment: 'center', horizontalAlignment: 'center', class: 'text-center', padding: { left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem' }, background: { color: Theme.background.main } },
+                    this.$render("i-label", { id: 'lbName', font: { size: '2rem', bold: true, color: Theme.text.primary }, width: '100%', margin: { bottom: '1rem' } }),
+                    this.$render("i-label", { id: 'lbUTC', visible: false, width: '100%', font: { color: Theme.text.primary } }),
+                    this.$render("i-hstack", { id: 'pnlCounter', gap: '3rem', margin: { top: '1rem' }, horizontalAlignment: 'center', verticalAlignment: 'center' }))));
         }
     };
     ScomCountDown = __decorate([

@@ -15,7 +15,9 @@ export default class Module1 extends Module {
         id: 'countdown0',
         name: 'My countdown',
         date: '03-30-2023 20:00',
-        showUTC: true
+        showUTC: true,
+        showFooter: false,
+        showHeader: false
     })
     this.mainStack.appendChild(this.countdownEl)
   }

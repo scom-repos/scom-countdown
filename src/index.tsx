@@ -10,10 +10,14 @@ import {
   moment,
   Styles
 } from '@ijstech/components'
+import { } from '@ijstech/eth-contract'
+import { } from '@ijstech/eth-wallet'
 import { IData, PageBlock } from './interface'
 import { setDataFromSCConfig } from './store'
+import ScomDappContainer from "@scom/scom-dapp-container";
 import './index.css'
 import scconfig from './scconfig.json'
+
 const Theme = Styles.Theme.ThemeVars
 
 const configSchema = {
@@ -34,6 +38,8 @@ interface ScomCountDownElement extends ControlElement {
   name?: string
   showUTC?: boolean
   units?: string
+  showHeader?: boolean;
+  showFooter?: boolean;
 }
 
 const defaultDateTimeFormat = 'MM/DD/YYYY HH:mm:ss'
@@ -60,6 +66,7 @@ export default class ScomCountDown extends Module implements PageBlock {
   private pnlCounter: HStack
   private lbName: Label
   private lbUTC: Label
+  private dappContainer: ScomDappContainer;
 
   private timer: any
 
@@ -98,6 +105,8 @@ export default class ScomCountDown extends Module implements PageBlock {
       moment().endOf('days').format(defaultDateTimeFormat)
     )
     this.data.units = this.getAttribute('units', true, unitOptions[0])
+    this.data.showHeader = this.getAttribute('showHeader', true, true)
+    this.data.showFooter = this.getAttribute('showFooter', true, true)
     this.setData(this.data)
     this.isReadyCallbackQueued = false
     this.executeReadyCallback()
@@ -147,6 +156,22 @@ export default class ScomCountDown extends Module implements PageBlock {
   }
   set units(value: string) {
     this.data.units = value || unitOptions[0]
+  }
+
+  get showFooter() {
+    return this.data.showFooter ?? true
+  }
+  set showFooter(value: boolean) {
+    this.data.showFooter = value
+    if (this.dappContainer) this.dappContainer.showFooter = this.showFooter;
+  }
+
+  get showHeader() {
+    return this.data.showHeader ?? true
+  }
+  set showHeader(value: boolean) {
+    this.data.showHeader = value
+    if (this.dappContainer) this.dappContainer.showHeader = this.showHeader;
   }
 
   getConfigSchema() {
@@ -239,6 +264,12 @@ export default class ScomCountDown extends Module implements PageBlock {
   }
 
   private renderUI() {
+    const data: any = {
+      showWalletNetwork: false,
+      showFooter: this.showFooter,
+      showHeader: this.showHeader
+    }
+    if (this.dappContainer?.setData) this.dappContainer.setData(data)
     const now = moment()
     let end = moment(this.date)
     const isTimeout = end.diff(now) <= 0
@@ -263,12 +294,19 @@ export default class ScomCountDown extends Module implements PageBlock {
     return this.tag
   }
 
-  async setTag(value: any) {
-    const newValue = value || {};
-    for (let prop in newValue) {
-      if (newValue.hasOwnProperty(prop))
-        this.tag[prop] = newValue[prop];
+  private updateTag(type: 'light'|'dark', value: any) {
+    this.tag[type] = this.tag[type] ?? {};
+    for (let prop in value) {
+      if (value.hasOwnProperty(prop))
+        this.tag[type][prop] = value[prop];
     }
+  }
+
+  async setTag(value: any, init?: boolean) {
+    const newValue = value || {};
+    if (newValue.light) this.updateTag('light', newValue.light);
+    if (newValue.dark) this.updateTag('dark', newValue.dark);
+    if (this.dappContainer && !init) this.dappContainer.setTag(this.tag);
     this.updateTheme();
     this.display = 'block'
     this.width = this.tag.width
@@ -282,8 +320,9 @@ export default class ScomCountDown extends Module implements PageBlock {
   }
 
   private updateTheme() {
-    this.updateStyle('--text-primary', this.tag?.fontColor);
-    this.updateStyle('--background-main', this.tag?.backgroundColor);
+    const themeVar = this.dappContainer?.theme || 'light';
+    this.updateStyle('--text-primary', this.tag[themeVar]?.fontColor);
+    this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
   }
 
   private getPropertiesSchema() {
@@ -316,15 +355,35 @@ export default class ScomCountDown extends Module implements PageBlock {
     const themeSchema: IDataSchema = {
       type: 'object',
       properties: {
-        backgroundColor: {
-          type: 'string',
-          format: 'color',
-          readOnly: true
+        dark: {
+          type: 'object',
+          properties: {
+            backgroundColor: {
+              type: 'string',
+              format: 'color',
+              readOnly: true
+            },
+            fontColor: {
+              type: 'string',
+              format: 'color',
+              readOnly: true
+            }
+          }
         },
-        fontColor: {
-          type: 'string',
-          format: 'color',
-          readOnly: true
+        light: {
+          type: 'object',
+          properties: {
+            backgroundColor: {
+              type: 'string',
+              format: 'color',
+              readOnly: true
+            },
+            fontColor: {
+              type: 'string',
+              format: 'color',
+              readOnly: true
+            }
+          }
         }
       }
     }
@@ -338,13 +397,31 @@ export default class ScomCountDown extends Module implements PageBlock {
     const themeSchema: IDataSchema = {
       type: 'object',
       properties: {
-        backgroundColor: {
-          type: 'string',
-          format: 'color'
+        dark: {
+          type: 'object',
+          properties: {
+            backgroundColor: {
+              type: 'string',
+              format: 'color'
+            },
+            fontColor: {
+              type: 'string',
+              format: 'color'
+            }
+          }
         },
-        fontColor: {
-          type: 'string',
-          format: 'color'
+        light: {
+          type: 'object',
+          properties: {
+            backgroundColor: {
+              type: 'string',
+              format: 'color'
+            },
+            fontColor: {
+              type: 'string',
+              format: 'color'
+            }
+          }
         }
       }
     }
@@ -383,14 +460,16 @@ export default class ScomCountDown extends Module implements PageBlock {
               if (!userInputData) return;
               this.oldTag = { ...this.tag };
               if (builder) builder.setTag(userInputData);
-              this.setTag(userInputData);
+              else this.setTag(userInputData);
+              if (this.dappContainer) this.dappContainer.setTag(userInputData);
 
             },
             undo: () => {
               if (!userInputData) return;
               this.tag = { ...this.oldTag };
               if (builder) builder.setTag(this.tag);
-              this.setTag(this.tag);
+              else this.setTag(this.tag);
+              if (this.dappContainer) this.dappContainer.setTag(this.tag);
             },
             redo: () => { }
           }
@@ -403,28 +482,30 @@ export default class ScomCountDown extends Module implements PageBlock {
 
   render() {
     return (
-      <i-vstack
-        verticalAlignment='center'
-        horizontalAlignment='center'
-        class='text-center'
-        padding={{left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem'}}
-        background={{color: Theme.background.main}}
-      >
-        <i-label
-          id='lbName'
-          font={{ size: '2rem', bold: true, color: Theme.text.primary }}
-          width='100%'
-          margin={{ bottom: '1rem' }}
-        ></i-label>
-        <i-label id='lbUTC' visible={false} width='100%' font={{color: Theme.text.primary}}></i-label>
-        <i-hstack
-          id='pnlCounter'
-          gap='3rem'
-          margin={{ top: '1rem' }}
-          horizontalAlignment='center'
+      <i-scom-dapp-container id="dappContainer">
+        <i-vstack
           verticalAlignment='center'
-        ></i-hstack>
-      </i-vstack>
+          horizontalAlignment='center'
+          class='text-center'
+          padding={{left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem'}}
+          background={{color: Theme.background.main}}
+        >
+          <i-label
+            id='lbName'
+            font={{ size: '2rem', bold: true, color: Theme.text.primary }}
+            width='100%'
+            margin={{ bottom: '1rem' }}
+          ></i-label>
+          <i-label id='lbUTC' visible={false} width='100%' font={{color: Theme.text.primary}}></i-label>
+          <i-hstack
+            id='pnlCounter'
+            gap='3rem'
+            margin={{ top: '1rem' }}
+            horizontalAlignment='center'
+            verticalAlignment='center'
+          ></i-hstack>
+        </i-vstack>
+      </i-scom-dapp-container>
     )
   }
 }

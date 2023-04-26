@@ -33,6 +33,8 @@ declare module "@scom/scom-countdown/interface.ts" {
         name?: string;
         showUTC?: boolean;
         units?: string;
+        showHeader?: boolean;
+        showFooter?: boolean;
     }
 }
 /// <amd-module name="@scom/scom-countdown/store.ts" />
@@ -55,6 +57,9 @@ declare module "@scom/scom-countdown/scconfig.json.ts" {
         moduleDir: string;
         main: string;
         modules: {};
+        dependencies: {
+            "@scom/scom-dapp-container": string;
+        };
         ipfsGatewayUrl: string;
     };
     export default _default;
@@ -69,6 +74,8 @@ declare module "@scom/scom-countdown" {
         name?: string;
         showUTC?: boolean;
         units?: string;
+        showHeader?: boolean;
+        showFooter?: boolean;
     }
     global {
         namespace JSX {
@@ -83,6 +90,7 @@ declare module "@scom/scom-countdown" {
         private pnlCounter;
         private lbName;
         private lbUTC;
+        private dappContainer;
         private timer;
         tag: any;
         private oldTag;
@@ -106,6 +114,10 @@ declare module "@scom/scom-countdown" {
         get unitArray(): string[];
         get units(): string;
         set units(value: string);
+        get showFooter(): boolean;
+        set showFooter(value: boolean);
+        get showHeader(): boolean;
+        set showHeader(value: boolean);
         getConfigSchema(): {
             type: string;
             required: any[];
@@ -125,7 +137,8 @@ declare module "@scom/scom-countdown" {
         private getValue;
         private renderUI;
         getTag(): any;
-        setTag(value: any): Promise<void>;
+        private updateTag;
+        setTag(value: any, init?: boolean): Promise<void>;
         private updateStyle;
         private updateTheme;
         private getPropertiesSchema;
