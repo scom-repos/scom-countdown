@@ -6,5 +6,8 @@ export default {
   "main": "@scom-countdown/main",
   "modules": {
   },
+  "dependencies": {
+    "@scom/scom-dapp-container": "*"
+  },
   "ipfsGatewayUrl": "https://ipfs.scom.dev/ipfs/"
 }

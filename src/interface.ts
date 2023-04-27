@@ -41,4 +41,6 @@ export interface IData {
   name?: string;
   showUTC?: boolean;
   units?: string;
+  showHeader?: boolean;
+  showFooter?: boolean;
 }
