@@ -64,18 +64,6 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_2.Styles.Theme.ThemeVars;
-    const configSchema = {
-        type: 'object',
-        required: [],
-        properties: {
-            width: {
-                type: 'string',
-            },
-            height: {
-                type: 'string',
-            },
-        },
-    };
     const defaultDateTimeFormat = 'MM/DD/YYYY HH:mm:ss';
     const unitOptions = ['days, hours, minutes, seconds', 'days, hours, minutes'];
     let ScomCountDown = class ScomCountDown extends components_2.Module {
@@ -173,9 +161,9 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             if (this.dappContainer)
                 this.dappContainer.showHeader = this.showHeader;
         }
-        getConfigSchema() {
-            return configSchema;
-        }
+        // getConfigSchema() {
+        //   return configSchema
+        // }
         getData() {
             return this.data;
         }
@@ -290,10 +278,14 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
         }
         async setTag(value, init) {
             const newValue = value || {};
-            if (newValue.light)
-                this.updateTag('light', newValue.light);
-            if (newValue.dark)
-                this.updateTag('dark', newValue.dark);
+            for (let prop in newValue) {
+                if (newValue.hasOwnProperty(prop)) {
+                    if (prop === 'light' || prop === 'dark')
+                        this.updateTag(prop, newValue[prop]);
+                    else
+                        this.tag[prop] = newValue[prop];
+                }
+            }
             if (this.dappContainer && !init)
                 this.dappContainer.setTag(this.tag);
             this.updateTheme();
@@ -335,80 +327,6 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 },
             };
         }
-        getEmbedderActions() {
-            const propertiesSchema = this.getPropertiesSchema();
-            const themeSchema = {
-                type: 'object',
-                properties: {
-                    dark: {
-                        type: 'object',
-                        properties: {
-                            backgroundColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly: true
-                            },
-                            fontColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly: true
-                            }
-                        }
-                    },
-                    light: {
-                        type: 'object',
-                        properties: {
-                            backgroundColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly: true
-                            },
-                            fontColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly: true
-                            }
-                        }
-                    }
-                }
-            };
-            return this._getActions(propertiesSchema, themeSchema);
-        }
-        getActions() {
-            const propertiesSchema = this.getPropertiesSchema();
-            const themeSchema = {
-                type: 'object',
-                properties: {
-                    dark: {
-                        type: 'object',
-                        properties: {
-                            backgroundColor: {
-                                type: 'string',
-                                format: 'color'
-                            },
-                            fontColor: {
-                                type: 'string',
-                                format: 'color'
-                            }
-                        }
-                    },
-                    light: {
-                        type: 'object',
-                        properties: {
-                            backgroundColor: {
-                                type: 'string',
-                                format: 'color'
-                            },
-                            fontColor: {
-                                type: 'string',
-                                format: 'color'
-                            }
-                        }
-                    }
-                }
-            };
-            return this._getActions(propertiesSchema, themeSchema);
-        }
         _getActions(settingSchema, themeSchema) {
             const actions = [
                 {
@@ -441,7 +359,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                             execute: async () => {
                                 if (!userInputData)
                                     return;
-                                this.oldTag = Object.assign({}, this.tag);
+                                this.oldTag = JSON.parse(JSON.stringify(this.tag));
                                 if (builder)
                                     builder.setTag(userInputData);
                                 else
@@ -452,7 +370,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                             undo: () => {
                                 if (!userInputData)
                                     return;
-                                this.tag = Object.assign({}, this.oldTag);
+                                this.tag = JSON.parse(JSON.stringify(this.oldTag));
                                 if (builder)
                                     builder.setTag(this.tag);
                                 else
@@ -467,6 +385,100 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 }
             ];
             return actions;
+        }
+        getConfigurators() {
+            return [
+                {
+                    name: 'Builder Configurator',
+                    target: 'Builders',
+                    getActions: () => {
+                        const propertiesSchema = this.getPropertiesSchema();
+                        const themeSchema = {
+                            type: 'object',
+                            properties: {
+                                dark: {
+                                    type: 'object',
+                                    properties: {
+                                        backgroundColor: {
+                                            type: 'string',
+                                            format: 'color'
+                                        },
+                                        fontColor: {
+                                            type: 'string',
+                                            format: 'color'
+                                        }
+                                    }
+                                },
+                                light: {
+                                    type: 'object',
+                                    properties: {
+                                        backgroundColor: {
+                                            type: 'string',
+                                            format: 'color'
+                                        },
+                                        fontColor: {
+                                            type: 'string',
+                                            format: 'color'
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                        return this._getActions(propertiesSchema, themeSchema);
+                    },
+                    getData: this.getData.bind(this),
+                    setData: this.setData.bind(this),
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this)
+                },
+                {
+                    name: 'Emdedder Configurator',
+                    target: 'Embedders',
+                    getActions: () => {
+                        const propertiesSchema = this.getPropertiesSchema();
+                        const themeSchema = {
+                            type: 'object',
+                            properties: {
+                                dark: {
+                                    type: 'object',
+                                    properties: {
+                                        backgroundColor: {
+                                            type: 'string',
+                                            format: 'color',
+                                            readOnly: true
+                                        },
+                                        fontColor: {
+                                            type: 'string',
+                                            format: 'color',
+                                            readOnly: true
+                                        }
+                                    }
+                                },
+                                light: {
+                                    type: 'object',
+                                    properties: {
+                                        backgroundColor: {
+                                            type: 'string',
+                                            format: 'color',
+                                            readOnly: true
+                                        },
+                                        fontColor: {
+                                            type: 'string',
+                                            format: 'color',
+                                            readOnly: true
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                        return this._getActions(propertiesSchema, themeSchema);
+                    },
+                    getData: this.getData.bind(this),
+                    setData: this.setData.bind(this),
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this)
+                }
+            ];
         }
         render() {
             return (this.$render("i-scom-dapp-container", { id: "dappContainer" },

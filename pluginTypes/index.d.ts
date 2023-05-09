@@ -67,7 +67,6 @@ declare module "@scom/scom-countdown/scconfig.json.ts" {
 /// <amd-module name="@scom/scom-countdown" />
 declare module "@scom/scom-countdown" {
     import { Module, IDataSchema, Container, ControlElement } from '@ijstech/components';
-    import { IData, PageBlock } from "@scom/scom-countdown/interface.ts";
     import "@scom/scom-countdown/index.css.ts";
     interface ScomCountDownElement extends ControlElement {
         date?: string;
@@ -84,7 +83,7 @@ declare module "@scom/scom-countdown" {
             }
         }
     }
-    export default class ScomCountDown extends Module implements PageBlock {
+    export default class ScomCountDown extends Module {
         private data;
         private oldData;
         private pnlCounter;
@@ -118,59 +117,36 @@ declare module "@scom/scom-countdown" {
         set showFooter(value: boolean);
         get showHeader(): boolean;
         set showHeader(value: boolean);
-        getConfigSchema(): {
-            type: string;
-            required: any[];
-            properties: {
-                width: {
-                    type: string;
-                };
-                height: {
-                    type: string;
-                };
-            };
-        };
-        getData(): IData;
-        setData(value: IData): Promise<void>;
+        private getData;
+        private setData;
         private renderCountItem;
-        clearCountdown(): void;
+        private clearCountdown;
         private getValue;
         private renderUI;
-        getTag(): any;
+        private getTag;
         private updateTag;
-        setTag(value: any, init?: boolean): Promise<void>;
+        private setTag;
         private updateStyle;
         private updateTheme;
         private getPropertiesSchema;
-        getEmbedderActions(): {
+        private _getActions;
+        getConfigurators(): {
             name: string;
-            icon: string;
-            command: (builder: any, userInputData: any) => {
-                execute: () => void;
-                undo: () => void;
-                redo: () => void;
-            };
-            userInputDataSchema: IDataSchema;
-        }[];
-        getActions(): {
-            name: string;
-            icon: string;
-            command: (builder: any, userInputData: any) => {
-                execute: () => void;
-                undo: () => void;
-                redo: () => void;
-            };
-            userInputDataSchema: IDataSchema;
-        }[];
-        _getActions(settingSchema: IDataSchema, themeSchema: IDataSchema): {
-            name: string;
-            icon: string;
-            command: (builder: any, userInputData: any) => {
-                execute: () => void;
-                undo: () => void;
-                redo: () => void;
-            };
-            userInputDataSchema: IDataSchema;
+            target: string;
+            getActions: () => {
+                name: string;
+                icon: string;
+                command: (builder: any, userInputData: any) => {
+                    execute: () => void;
+                    undo: () => void;
+                    redo: () => void;
+                };
+                userInputDataSchema: IDataSchema;
+            }[];
+            getData: any;
+            setData: any;
+            getTag: any;
+            setTag: any;
         }[];
         render(): any;
     }

@@ -12,7 +12,7 @@ import {
 } from '@ijstech/components'
 import { } from '@ijstech/eth-contract'
 import { } from '@ijstech/eth-wallet'
-import { IData, PageBlock } from './interface'
+import { IData } from './interface'
 import { setDataFromSCConfig } from './store'
 import ScomDappContainer from "@scom/scom-dapp-container";
 import './index.css'
@@ -20,18 +20,18 @@ import scconfig from './scconfig.json'
 
 const Theme = Styles.Theme.ThemeVars
 
-const configSchema = {
-  type: 'object',
-  required: [],
-  properties: {
-    width: {
-      type: 'string',
-    },
-    height: {
-      type: 'string',
-    },
-  },
-}
+// const configSchema = {
+//   type: 'object',
+//   required: [],
+//   properties: {
+//     width: {
+//       type: 'string',
+//     },
+//     height: {
+//       type: 'string',
+//     },
+//   },
+// }
 
 interface ScomCountDownElement extends ControlElement {
   date?: string
@@ -55,7 +55,7 @@ declare global {
 
 @customModule
 @customElements('i-scom-countdown')
-export default class ScomCountDown extends Module implements PageBlock {
+export default class ScomCountDown extends Module {
   private data: IData = {
     date: '',
   }
@@ -174,15 +174,15 @@ export default class ScomCountDown extends Module implements PageBlock {
     if (this.dappContainer) this.dappContainer.showHeader = this.showHeader;
   }
 
-  getConfigSchema() {
-    return configSchema
-  }
+  // getConfigSchema() {
+  //   return configSchema
+  // }
 
-  getData() {
+  private getData() {
     return this.data
   }
 
-  async setData(value: IData) {
+  private async setData(value: IData) {
     this.oldData = this.data
     this.data = value
     !this.lbName.isConnected && (await this.lbName.ready())
@@ -214,7 +214,7 @@ export default class ScomCountDown extends Module implements PageBlock {
     return itemEl
   }
 
-  clearCountdown() {
+  private clearCountdown() {
     this.pnlCounter.clearInnerHTML()
     for (let unit of this.unitArray) {
       const el = this.renderCountItem(unit, 0)
@@ -290,7 +290,7 @@ export default class ScomCountDown extends Module implements PageBlock {
     }
   }
 
-  getTag() {
+  private getTag() {
     return this.tag
   }
 
@@ -302,10 +302,16 @@ export default class ScomCountDown extends Module implements PageBlock {
     }
   }
 
-  async setTag(value: any, init?: boolean) {
+  private async setTag(value: any, init?: boolean) {
     const newValue = value || {};
-    if (newValue.light) this.updateTag('light', newValue.light);
-    if (newValue.dark) this.updateTag('dark', newValue.dark);
+    for (let prop in newValue) {
+      if (newValue.hasOwnProperty(prop)) {
+        if (prop === 'light' || prop === 'dark')
+          this.updateTag(prop, newValue[prop]);
+        else
+          this.tag[prop] = newValue[prop];
+      }
+    }
     if (this.dappContainer && !init) this.dappContainer.setTag(this.tag);
     this.updateTheme();
     this.display = 'block'
@@ -349,87 +355,7 @@ export default class ScomCountDown extends Module implements PageBlock {
     }
   }
 
-  getEmbedderActions() {
-    const propertiesSchema = this.getPropertiesSchema() as IDataSchema
-
-    const themeSchema: IDataSchema = {
-      type: 'object',
-      properties: {
-        dark: {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color',
-              readOnly: true
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color',
-              readOnly: true
-            }
-          }
-        },
-        light: {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color',
-              readOnly: true
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color',
-              readOnly: true
-            }
-          }
-        }
-      }
-    }
-
-    return this._getActions(propertiesSchema, themeSchema)
-  }
-
-  getActions() {
-    const propertiesSchema = this.getPropertiesSchema() as IDataSchema
-
-    const themeSchema: IDataSchema = {
-      type: 'object',
-      properties: {
-        dark: {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color'
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color'
-            }
-          }
-        },
-        light: {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color'
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color'
-            }
-          }
-        }
-      }
-    }
-
-    return this._getActions(propertiesSchema, themeSchema)
-  }
-
-  _getActions(settingSchema: IDataSchema, themeSchema: IDataSchema) {
+  private _getActions(settingSchema: IDataSchema, themeSchema: IDataSchema) {
     const actions = [
       {
         name: 'Settings',
@@ -458,7 +384,7 @@ export default class ScomCountDown extends Module implements PageBlock {
           return {
             execute: async () => {
               if (!userInputData) return;
-              this.oldTag = { ...this.tag };
+              this.oldTag = JSON.parse(JSON.stringify(this.tag));
               if (builder) builder.setTag(userInputData);
               else this.setTag(userInputData);
               if (this.dappContainer) this.dappContainer.setTag(userInputData);
@@ -466,7 +392,7 @@ export default class ScomCountDown extends Module implements PageBlock {
             },
             undo: () => {
               if (!userInputData) return;
-              this.tag = { ...this.oldTag };
+              this.tag = JSON.parse(JSON.stringify(this.oldTag));
               if (builder) builder.setTag(this.tag);
               else this.setTag(this.tag);
               if (this.dappContainer) this.dappContainer.setTag(this.tag);
@@ -478,6 +404,102 @@ export default class ScomCountDown extends Module implements PageBlock {
       }
     ]
     return actions
+  }
+
+  getConfigurators() {
+    return [
+      {
+        name: 'Builder Configurator',
+        target: 'Builders',
+        getActions: () => {
+          const propertiesSchema = this.getPropertiesSchema() as IDataSchema
+          const themeSchema: IDataSchema = {
+            type: 'object',
+            properties: {
+              dark: {
+                type: 'object',
+                properties: {
+                  backgroundColor: {
+                    type: 'string',
+                    format: 'color'
+                  },
+                  fontColor: {
+                    type: 'string',
+                    format: 'color'
+                  }
+                }
+              },
+              light: {
+                type: 'object',
+                properties: {
+                  backgroundColor: {
+                    type: 'string',
+                    format: 'color'
+                  },
+                  fontColor: {
+                    type: 'string',
+                    format: 'color'
+                  }
+                }
+              }
+            }
+          }
+
+          return this._getActions(propertiesSchema, themeSchema)
+        },
+        getData: this.getData.bind(this),
+        setData: this.setData.bind(this),
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this)
+      },
+      {
+        name: 'Emdedder Configurator',
+        target: 'Embedders',
+        getActions: () => {
+          const propertiesSchema = this.getPropertiesSchema() as IDataSchema
+          const themeSchema: IDataSchema = {
+            type: 'object',
+            properties: {
+              dark: {
+                type: 'object',
+                properties: {
+                  backgroundColor: {
+                    type: 'string',
+                    format: 'color',
+                    readOnly: true
+                  },
+                  fontColor: {
+                    type: 'string',
+                    format: 'color',
+                    readOnly: true
+                  }
+                }
+              },
+              light: {
+                type: 'object',
+                properties: {
+                  backgroundColor: {
+                    type: 'string',
+                    format: 'color',
+                    readOnly: true
+                  },
+                  fontColor: {
+                    type: 'string',
+                    format: 'color',
+                    readOnly: true
+                  }
+                }
+              }
+            }
+          }
+          return this._getActions(propertiesSchema, themeSchema)
+        },
+        getData: this.getData.bind(this),
+        setData: this.setData.bind(this),
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this)
+      }
+    ]
   }
 
   render() {
