@@ -48,19 +48,14 @@ declare module "@scom/scom-countdown/store.ts" {
 }
 /// <amd-module name="@scom/scom-countdown/index.css.ts" />
 declare module "@scom/scom-countdown/index.css.ts" { }
-/// <amd-module name="@scom/scom-countdown/scconfig.json.ts" />
-declare module "@scom/scom-countdown/scconfig.json.ts" {
+/// <amd-module name="@scom/scom-countdown/data.json.ts" />
+declare module "@scom/scom-countdown/data.json.ts" {
     const _default: {
-        name: string;
-        version: string;
-        env: string;
-        moduleDir: string;
-        main: string;
-        modules: {};
-        dependencies: {
-            "@scom/scom-dapp-container": string;
-        };
         ipfsGatewayUrl: string;
+        defaultBuilderData: {
+            name: string;
+            showUTC: boolean;
+        };
     };
     export default _default;
 }
@@ -85,14 +80,12 @@ declare module "@scom/scom-countdown" {
     }
     export default class ScomCountDown extends Module {
         private data;
-        private oldData;
         private pnlCounter;
         private lbName;
         private lbUTC;
         private dappContainer;
         private timer;
         tag: any;
-        private oldTag;
         readonly onConfirm: () => Promise<void>;
         readonly onDiscard: () => Promise<void>;
         readonly onEdit: () => Promise<void>;
@@ -119,17 +112,16 @@ declare module "@scom/scom-countdown" {
         set showHeader(value: boolean);
         private getData;
         private setData;
+        private refreshPage;
         private renderCountItem;
         private clearCountdown;
         private getValue;
         private renderUI;
         private getTag;
-        private updateTag;
         private setTag;
+        private updateTag;
         private updateStyle;
         private updateTheme;
-        private getPropertiesSchema;
-        private _getActions;
         getConfigurators(): {
             name: string;
             target: string;
@@ -148,6 +140,9 @@ declare module "@scom/scom-countdown" {
             getTag: any;
             setTag: any;
         }[];
+        private getPropertiesSchema;
+        private getThemeSchema;
+        private _getActions;
         render(): any;
     }
 }
