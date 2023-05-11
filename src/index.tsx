@@ -14,9 +14,9 @@ import { } from '@ijstech/eth-contract'
 import { } from '@ijstech/eth-wallet'
 import { IData } from './interface'
 import { setDataFromSCConfig } from './store'
-import ScomDappContainer from "@scom/scom-dapp-container";
+import ScomDappContainer from "@scom/scom-dapp-container"
 import './index.css'
-import scconfig from './scconfig.json'
+import dataJson from './data.json'
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -59,9 +59,6 @@ export default class ScomCountDown extends Module {
   private data: IData = {
     date: '',
   }
-  private oldData: IData = {
-    date: '',
-  }
 
   private pnlCounter: HStack
   private lbName: Label
@@ -71,7 +68,6 @@ export default class ScomCountDown extends Module {
   private timer: any
 
   tag: any = {}
-  private oldTag: any = {}
 
   readonly onConfirm: () => Promise<void>
   readonly onDiscard: () => Promise<void>
@@ -85,7 +81,7 @@ export default class ScomCountDown extends Module {
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
-    if (scconfig) setDataFromSCConfig(scconfig)
+    if (dataJson) setDataFromSCConfig(dataJson)
   }
 
   init() {
@@ -105,8 +101,8 @@ export default class ScomCountDown extends Module {
       moment().endOf('days').format(defaultDateTimeFormat)
     )
     this.data.units = this.getAttribute('units', true, unitOptions[0])
-    this.data.showHeader = this.getAttribute('showHeader', true, true)
-    this.data.showFooter = this.getAttribute('showFooter', true, true)
+    this.data.showHeader = this.getAttribute('showHeader', true, false)
+    this.data.showFooter = this.getAttribute('showFooter', true, false)
     this.setData(this.data)
     this.isReadyCallbackQueued = false
     this.executeReadyCallback()
@@ -159,7 +155,7 @@ export default class ScomCountDown extends Module {
   }
 
   get showFooter() {
-    return this.data.showFooter ?? true
+    return this.data.showFooter ?? false
   }
   set showFooter(value: boolean) {
     this.data.showFooter = value
@@ -167,35 +163,31 @@ export default class ScomCountDown extends Module {
   }
 
   get showHeader() {
-    return this.data.showHeader ?? true
+    return this.data.showHeader ?? false
   }
   set showHeader(value: boolean) {
     this.data.showHeader = value
     if (this.dappContainer) this.dappContainer.showHeader = this.showHeader;
   }
 
-  // getConfigSchema() {
-  //   return configSchema
-  // }
-
   private getData() {
     return this.data
   }
 
   private async setData(value: IData) {
-    this.oldData = this.data
     this.data = value
     !this.lbName.isConnected && (await this.lbName.ready())
     !this.lbUTC.isConnected && (await this.lbUTC.ready())
-    if (this.lbName) {
-      this.lbName.visible = !!this.data.name
-      this.lbName.caption = this.data.name
+    const data: any = {
+      showWalletNetwork: false,
+      showFooter: this.showFooter,
+      showHeader: this.showHeader
     }
-    if (this.lbUTC) {
-      this.lbUTC.visible = this.showUTC
-      this.lbUTC.caption = this.date ? moment.utc(this.date).toString() : ''
-    }
+    if (this.dappContainer?.setData) this.dappContainer.setData(data)
+    this.refreshPage()
+  }
 
+  private refreshPage() {
     this.renderUI()
     this.timer && clearInterval(this.timer)
     this.timer = setInterval(() => this.renderUI(), 1000)
@@ -264,12 +256,14 @@ export default class ScomCountDown extends Module {
   }
 
   private renderUI() {
-    const data: any = {
-      showWalletNetwork: false,
-      showFooter: this.showFooter,
-      showHeader: this.showHeader
+    if (this.lbName) {
+      this.lbName.visible = !!this.data.name
+      this.lbName.caption = this.data.name
     }
-    if (this.dappContainer?.setData) this.dappContainer.setData(data)
+    if (this.lbUTC) {
+      this.lbUTC.visible = this.showUTC
+      this.lbUTC.caption = this.date ? moment.utc(this.date).toString() : ''
+    }
     const now = moment()
     let end = moment(this.date)
     const isTimeout = end.diff(now) <= 0
@@ -294,14 +288,6 @@ export default class ScomCountDown extends Module {
     return this.tag
   }
 
-  private updateTag(type: 'light'|'dark', value: any) {
-    this.tag[type] = this.tag[type] ?? {};
-    for (let prop in value) {
-      if (value.hasOwnProperty(prop))
-        this.tag[type][prop] = value[prop];
-    }
-  }
-
   private async setTag(value: any, init?: boolean) {
     const newValue = value || {};
     for (let prop in newValue) {
@@ -319,6 +305,14 @@ export default class ScomCountDown extends Module {
     this.height = this.tag.height
   }
 
+  private updateTag(type: 'light'|'dark', value: any) {
+    this.tag[type] = this.tag[type] ?? {};
+    for (let prop in value) {
+      if (value.hasOwnProperty(prop))
+        this.tag[type][prop] = value[prop];
+    }
+  }
+
   private updateStyle(name: string, value: any) {
     value ?
       this.style.setProperty(name, value) :
@@ -331,8 +325,43 @@ export default class ScomCountDown extends Module {
     this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
   }
 
+  getConfigurators() {
+    return [
+      {
+        name: 'Builder Configurator',
+        target: 'Builders',
+        getActions: () => {
+          const propertiesSchema = this.getPropertiesSchema()
+          const themeSchema = this.getThemeSchema()
+          return this._getActions(propertiesSchema, themeSchema)
+        },
+        getData: this.getData.bind(this),
+        setData: async (data: IData) => {
+          const defaultData = dataJson.defaultBuilderData as any
+          defaultData.date =  moment().endOf('days').format(defaultDateTimeFormat)
+          await this.setData({...defaultData, ...data})
+        },
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this)
+      },
+      {
+        name: 'Emdedder Configurator',
+        target: 'Embedders',
+        getActions: () => {
+          const propertiesSchema = this.getPropertiesSchema()
+          const themeSchema = this.getThemeSchema(true)
+          return this._getActions(propertiesSchema, themeSchema)
+        },
+        getData: this.getData.bind(this),
+        setData: this.setData.bind(this),
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this)
+      }
+    ]
+  }
+
   private getPropertiesSchema() {
-    return {
+    const schema: IDataSchema = {
       type: 'object',
       properties: {
         date: {
@@ -353,6 +382,46 @@ export default class ScomCountDown extends Module {
         },
       },
     }
+    return schema
+  }
+
+  private getThemeSchema(readOnly?: boolean) {
+    const themeSchema: IDataSchema = {
+      type: 'object',
+      properties: {
+        dark: {
+          type: 'object',
+          properties: {
+            backgroundColor: {
+              type: 'string',
+              format: 'color',
+              readOnly
+            },
+            fontColor: {
+              type: 'string',
+              format: 'color',
+              readOnly
+            }
+          }
+        },
+        light: {
+          type: 'object',
+          properties: {
+            backgroundColor: {
+              type: 'string',
+              format: 'color',
+              readOnly
+            },
+            fontColor: {
+              type: 'string',
+              format: 'color',
+              readOnly
+            }
+          }
+        }
+      }
+    }
+    return themeSchema
   }
 
   private _getActions(settingSchema: IDataSchema, themeSchema: IDataSchema) {
@@ -361,15 +430,22 @@ export default class ScomCountDown extends Module {
         name: 'Settings',
         icon: 'cog',
         command: (builder: any, userInputData: any) => {
+          let oldData = {date: ''}
           return {
             execute: () => {
-              if (builder?.setData) builder.setData(userInputData)
-              this.setData(userInputData)
+              oldData = {...this.data}
+              if (userInputData?.date !== undefined) this.data.date = userInputData.date
+              if (userInputData?.name !== undefined) this.data.name = userInputData.name
+              if (userInputData?.showUTC !== undefined) this.data.showUTC = userInputData.showUTC
+              if (userInputData?.units !== undefined) this.data.units = userInputData.units
+              this.refreshPage()
+              if (builder?.setData) builder.setData(this.data)
               this.height = 'auto'
             },
             undo: () => {
-              if (builder?.setData) builder.setData(this.oldData)
-              this.setData(this.oldData)
+              this.data = {...oldData}
+              this.refreshPage()
+              if (builder?.setData) builder.setData(this.data)
               this.height = 'auto'
             },
             redo: () => {},
@@ -381,10 +457,11 @@ export default class ScomCountDown extends Module {
         name: 'Theme Settings',
         icon: 'palette',
         command: (builder: any, userInputData: any) => {
+          let oldTag = {}
           return {
             execute: async () => {
               if (!userInputData) return;
-              this.oldTag = JSON.parse(JSON.stringify(this.tag));
+              oldTag = JSON.parse(JSON.stringify(this.tag));
               if (builder) builder.setTag(userInputData);
               else this.setTag(userInputData);
               if (this.dappContainer) this.dappContainer.setTag(userInputData);
@@ -392,7 +469,7 @@ export default class ScomCountDown extends Module {
             },
             undo: () => {
               if (!userInputData) return;
-              this.tag = JSON.parse(JSON.stringify(this.oldTag));
+              this.tag = JSON.parse(JSON.stringify(oldTag));
               if (builder) builder.setTag(this.tag);
               else this.setTag(this.tag);
               if (this.dappContainer) this.dappContainer.setTag(this.tag);
@@ -404,102 +481,6 @@ export default class ScomCountDown extends Module {
       }
     ]
     return actions
-  }
-
-  getConfigurators() {
-    return [
-      {
-        name: 'Builder Configurator',
-        target: 'Builders',
-        getActions: () => {
-          const propertiesSchema = this.getPropertiesSchema() as IDataSchema
-          const themeSchema: IDataSchema = {
-            type: 'object',
-            properties: {
-              dark: {
-                type: 'object',
-                properties: {
-                  backgroundColor: {
-                    type: 'string',
-                    format: 'color'
-                  },
-                  fontColor: {
-                    type: 'string',
-                    format: 'color'
-                  }
-                }
-              },
-              light: {
-                type: 'object',
-                properties: {
-                  backgroundColor: {
-                    type: 'string',
-                    format: 'color'
-                  },
-                  fontColor: {
-                    type: 'string',
-                    format: 'color'
-                  }
-                }
-              }
-            }
-          }
-
-          return this._getActions(propertiesSchema, themeSchema)
-        },
-        getData: this.getData.bind(this),
-        setData: this.setData.bind(this),
-        getTag: this.getTag.bind(this),
-        setTag: this.setTag.bind(this)
-      },
-      {
-        name: 'Emdedder Configurator',
-        target: 'Embedders',
-        getActions: () => {
-          const propertiesSchema = this.getPropertiesSchema() as IDataSchema
-          const themeSchema: IDataSchema = {
-            type: 'object',
-            properties: {
-              dark: {
-                type: 'object',
-                properties: {
-                  backgroundColor: {
-                    type: 'string',
-                    format: 'color',
-                    readOnly: true
-                  },
-                  fontColor: {
-                    type: 'string',
-                    format: 'color',
-                    readOnly: true
-                  }
-                }
-              },
-              light: {
-                type: 'object',
-                properties: {
-                  backgroundColor: {
-                    type: 'string',
-                    format: 'color',
-                    readOnly: true
-                  },
-                  fontColor: {
-                    type: 'string',
-                    format: 'color',
-                    readOnly: true
-                  }
-                }
-              }
-            }
-          }
-          return this._getActions(propertiesSchema, themeSchema)
-        },
-        getData: this.getData.bind(this),
-        setData: this.setData.bind(this),
-        getTag: this.getTag.bind(this),
-        setTag: this.setTag.bind(this)
-      }
-    ]
   }
 
   render() {
