@@ -62,6 +62,7 @@ declare module "@scom/scom-countdown/data.json.ts" {
 /// <amd-module name="@scom/scom-countdown" />
 declare module "@scom/scom-countdown" {
     import { Module, IDataSchema, Container, ControlElement } from '@ijstech/components';
+    import { IData } from "@scom/scom-countdown/interface.ts";
     import "@scom/scom-countdown/index.css.ts";
     interface ScomCountDownElement extends ControlElement {
         date?: string;
@@ -122,7 +123,7 @@ declare module "@scom/scom-countdown" {
         private updateTag;
         private updateStyle;
         private updateTheme;
-        getConfigurators(): {
+        getConfigurators(): ({
             name: string;
             target: string;
             getActions: () => {
@@ -136,10 +137,33 @@ declare module "@scom/scom-countdown" {
                 userInputDataSchema: IDataSchema;
             }[];
             getData: any;
+            setData: (data: IData) => Promise<void>;
+            getTag: any;
+            setTag: any;
+            getLinkParams?: undefined;
+            setLinkParams?: undefined;
+        } | {
+            name: string;
+            target: string;
+            getActions: () => {
+                name: string;
+                icon: string;
+                command: (builder: any, userInputData: any) => {
+                    execute: () => void;
+                    undo: () => void;
+                    redo: () => void;
+                };
+                userInputDataSchema: IDataSchema;
+            }[];
+            getLinkParams: () => {
+                data: string;
+            };
+            setLinkParams: (params: any) => Promise<void>;
+            getData: any;
             setData: any;
             getTag: any;
             setTag: any;
-        }[];
+        })[];
         private getPropertiesSchema;
         private getThemeSchema;
         private _getActions;

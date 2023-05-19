@@ -295,6 +295,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             this.updateStyle('--background-main', (_c = this.tag[themeVar]) === null || _c === void 0 ? void 0 : _c.backgroundColor);
         }
         getConfigurators() {
+            const self = this;
             return [
                 {
                     name: 'Builder Configurator',
@@ -320,6 +321,21 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                         const propertiesSchema = this.getPropertiesSchema();
                         const themeSchema = this.getThemeSchema(true);
                         return this._getActions(propertiesSchema, themeSchema);
+                    },
+                    getLinkParams: () => {
+                        const data = this.data || {};
+                        return {
+                            data: window.btoa(JSON.stringify(data))
+                        };
+                    },
+                    setLinkParams: async (params) => {
+                        if (params.data) {
+                            const utf8String = decodeURIComponent(params.data);
+                            const decodedString = window.atob(utf8String);
+                            const newData = JSON.parse(decodedString);
+                            let resultingData = Object.assign(Object.assign({}, self.data), newData);
+                            await this.setData(resultingData);
+                        }
                     },
                     getData: this.getData.bind(this),
                     setData: this.setData.bind(this),
