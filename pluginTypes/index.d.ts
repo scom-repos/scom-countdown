@@ -97,6 +97,7 @@ declare module "@scom/scom-countdown" {
         discard: () => Promise<void>;
         constructor(parent?: Container, options?: any);
         init(): void;
+        private getInitTag;
         static create(options?: ScomCountDownElement, parent?: Container): Promise<ScomCountDown>;
         get name(): string;
         set name(value: string);
