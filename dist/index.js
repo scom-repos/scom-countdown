@@ -18,7 +18,7 @@ define("@scom/scom-countdown/store.ts", ["require", "exports"], function (requir
     };
     const setDataFromSCConfig = (options) => {
         if (options.ipfsGatewayUrl) {
-            exports.setIPFSGatewayUrl(options.ipfsGatewayUrl);
+            (0, exports.setIPFSGatewayUrl)(options.ipfsGatewayUrl);
         }
     };
     exports.setDataFromSCConfig = setDataFromSCConfig;
@@ -69,26 +69,35 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             };
             this.tag = {};
             if (data_json_1.default)
-                store_1.setDataFromSCConfig(data_json_1.default);
+                (0, store_1.setDataFromSCConfig)(data_json_1.default);
         }
         init() {
             this.isReadyCallbackQueued = true;
             super.init();
             const width = this.getAttribute('width', true);
             const height = this.getAttribute('height', true);
-            this.setTag({
-                width: width ? this.width : 'auto',
-                height: height ? this.height : 'auto',
-            });
+            this.setTag(Object.assign({ width: width ? this.width : 'auto', height: height ? this.height : 'auto' }, this.getInitTag()));
             this.data.name = this.getAttribute('name', true);
             this.data.showUTC = this.getAttribute('showUTC', true, false);
-            this.data.date = this.getAttribute('date', true, components_2.moment().endOf('days').format(defaultDateTimeFormat));
+            this.data.date = this.getAttribute('date', true, (0, components_2.moment)().endOf('days').format(defaultDateTimeFormat));
             this.data.units = this.getAttribute('units', true, unitOptions[0]);
             this.data.showHeader = this.getAttribute('showHeader', true, false);
             this.data.showFooter = this.getAttribute('showFooter', true, false);
             this.setData(this.data);
             this.isReadyCallbackQueued = false;
             this.executeReadyCallback();
+        }
+        getInitTag() {
+            const getColors = (vars) => {
+                return {
+                    "backgroundColor": vars.background.main,
+                    "fontColor": '#ffffff'
+                };
+            };
+            return {
+                dark: getColors(components_2.Styles.Theme.darkTheme),
+                light: getColors(components_2.Styles.Theme.defaultTheme)
+            };
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -107,10 +116,10 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             }
         }
         get date() {
-            let end = components_2.moment(this.data.date);
+            let end = (0, components_2.moment)(this.data.date);
             if (!end.isValid())
-                end = components_2.moment(this.data.date, defaultDateTimeFormat);
-            const utcDate = components_2.moment(this.data.date);
+                end = (0, components_2.moment)(this.data.date, defaultDateTimeFormat);
+            const utcDate = (0, components_2.moment)(this.data.date);
             return end.isValid() ? utcDate.format(defaultDateTimeFormat) : '';
         }
         set date(value) {
@@ -236,8 +245,8 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 this.lbUTC.visible = this.showUTC;
                 this.lbUTC.caption = this.date ? components_2.moment.utc(this.date).toString() : '';
             }
-            const now = components_2.moment();
-            let end = components_2.moment(this.date);
+            const now = (0, components_2.moment)();
+            let end = (0, components_2.moment)(this.date);
             const isTimeout = end.diff(now) <= 0;
             if (isTimeout || !end.isValid()) {
                 this.clearCountdown();
@@ -308,7 +317,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                     getData: this.getData.bind(this),
                     setData: async (data) => {
                         const defaultData = data_json_1.default.defaultBuilderData;
-                        defaultData.date = components_2.moment().endOf('days').format(defaultDateTimeFormat);
+                        defaultData.date = (0, components_2.moment)().endOf('days').format(defaultDateTimeFormat);
                         await this.setData(Object.assign(Object.assign({}, defaultData), data));
                     },
                     getTag: this.getTag.bind(this),
@@ -487,7 +496,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
     };
     ScomCountDown = __decorate([
         components_2.customModule,
-        components_2.customElements('i-scom-countdown')
+        (0, components_2.customElements)('i-scom-countdown')
     ], ScomCountDown);
     exports.default = ScomCountDown;
 });

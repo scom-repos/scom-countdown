@@ -18,20 +18,7 @@ import ScomDappContainer from "@scom/scom-dapp-container"
 import './index.css'
 import dataJson from './data.json'
 
-const Theme = Styles.Theme.ThemeVars
-
-// const configSchema = {
-//   type: 'object',
-//   required: [],
-//   properties: {
-//     width: {
-//       type: 'string',
-//     },
-//     height: {
-//       type: 'string',
-//     },
-//   },
-// }
+const Theme = Styles.Theme.ThemeVars;
 
 interface ScomCountDownElement extends ControlElement {
   date?: string
@@ -92,7 +79,8 @@ export default class ScomCountDown extends Module {
     this.setTag({
       width: width ? this.width : 'auto',
       height: height ? this.height : 'auto',
-    })
+      ...this.getInitTag()
+    });
     this.data.name = this.getAttribute('name', true)
     this.data.showUTC = this.getAttribute('showUTC', true, false)
     this.data.date = this.getAttribute(
@@ -106,6 +94,19 @@ export default class ScomCountDown extends Module {
     this.setData(this.data)
     this.isReadyCallbackQueued = false
     this.executeReadyCallback()
+  }
+
+  private getInitTag() {
+    const getColors = (vars: any) => {
+      return {
+        "backgroundColor": vars.background.main,
+        "fontColor": '#ffffff'
+      }
+    }
+    return {
+      dark: getColors(Styles.Theme.darkTheme),
+      light: getColors(Styles.Theme.defaultTheme)
+    }
   }
 
   static async create(options?: ScomCountDownElement, parent?: Container) {
