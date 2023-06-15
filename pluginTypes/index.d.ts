@@ -65,6 +65,7 @@ declare module "@scom/scom-countdown" {
     import { IData } from "@scom/scom-countdown/interface.ts";
     import "@scom/scom-countdown/index.css.ts";
     interface ScomCountDownElement extends ControlElement {
+        lazyLoad?: boolean;
         date?: string;
         name?: string;
         showUTC?: boolean;

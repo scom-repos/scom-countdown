@@ -77,13 +77,16 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
             const width = this.getAttribute('width', true);
             const height = this.getAttribute('height', true);
             this.setTag(Object.assign({ width: width ? this.width : 'auto', height: height ? this.height : 'auto' }, this.getInitTag()));
-            this.data.name = this.getAttribute('name', true);
-            this.data.showUTC = this.getAttribute('showUTC', true, false);
-            this.data.date = this.getAttribute('date', true, (0, components_2.moment)().endOf('days').format(defaultDateTimeFormat));
-            this.data.units = this.getAttribute('units', true, unitOptions[0]);
-            this.data.showHeader = this.getAttribute('showHeader', true, false);
-            this.data.showFooter = this.getAttribute('showFooter', true, false);
-            this.setData(this.data);
+            const lazyLoad = this.getAttribute('lazyLoad', true, false);
+            if (!lazyLoad) {
+                this.data.name = this.getAttribute('name', true);
+                this.data.showUTC = this.getAttribute('showUTC', true, false);
+                this.data.date = this.getAttribute('date', true, (0, components_2.moment)().endOf('days').format(defaultDateTimeFormat));
+                this.data.units = this.getAttribute('units', true, unitOptions[0]);
+                this.data.showHeader = this.getAttribute('showHeader', true, false);
+                this.data.showFooter = this.getAttribute('showFooter', true, false);
+                this.setData(this.data);
+            }
             this.isReadyCallbackQueued = false;
             this.executeReadyCallback();
         }
