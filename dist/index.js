@@ -4,6 +4,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 define("@scom/scom-countdown/interface.ts", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -55,7 +66,104 @@ define("@scom/scom-countdown/data.json.ts", ["require", "exports"], function (re
         }
     };
 });
-define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@scom/scom-countdown/store.ts", "@scom/scom-countdown/data.json.ts", "@scom/scom-countdown/index.css.ts"], function (require, exports, components_2, store_1, data_json_1) {
+define("@scom/scom-countdown/formSchema.json.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    ///<amd-module name='@scom/scom-countdown/formSchema.json.ts'/> 
+    const unitOptions = ['days, hours, minutes, seconds', 'days, hours, minutes'];
+    const theme = {
+        type: 'object',
+        properties: {
+            backgroundColor: {
+                type: 'string',
+                format: 'color'
+            },
+            fontColor: {
+                type: 'string',
+                format: 'color'
+            }
+        }
+    };
+    exports.default = {
+        dataSchema: {
+            type: 'object',
+            properties: {
+                date: {
+                    type: 'string',
+                    format: 'date-time',
+                },
+                name: {
+                    type: 'string',
+                },
+                showUTC: {
+                    title: 'Show UTC',
+                    default: false,
+                    type: 'boolean',
+                },
+                units: {
+                    type: 'string',
+                    enum: unitOptions,
+                },
+                dark: theme,
+                light: theme
+            }
+        },
+        uiSchema: {
+            type: 'Categorization',
+            elements: [
+                {
+                    type: 'Category',
+                    label: 'General',
+                    elements: [
+                        {
+                            type: 'VerticalLayout',
+                            elements: [
+                                {
+                                    type: 'Control',
+                                    scope: '#/properties/date'
+                                },
+                                {
+                                    type: 'Control',
+                                    scope: '#/properties/name'
+                                },
+                                {
+                                    type: 'Control',
+                                    scope: '#/properties/showUTC'
+                                },
+                                {
+                                    type: 'Control',
+                                    scope: '#/properties/units'
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    type: 'Category',
+                    label: 'Theme',
+                    elements: [
+                        {
+                            type: 'VerticalLayout',
+                            elements: [
+                                {
+                                    type: 'Control',
+                                    label: 'Dark',
+                                    scope: '#/properties/dark'
+                                },
+                                {
+                                    type: 'Control',
+                                    label: 'Light',
+                                    scope: '#/properties/light'
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    };
+});
+define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@scom/scom-countdown/store.ts", "@scom/scom-countdown/data.json.ts", "@scom/scom-countdown/formSchema.json.ts", "@scom/scom-countdown/index.css.ts"], function (require, exports, components_2, store_1, data_json_1, formSchema_json_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_2.Styles.Theme.ThemeVars;
@@ -313,9 +421,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                     name: 'Builder Configurator',
                     target: 'Builders',
                     getActions: () => {
-                        const propertiesSchema = this.getPropertiesSchema();
-                        const themeSchema = this.getThemeSchema();
-                        return this._getActions(propertiesSchema, themeSchema);
+                        return this._getActions();
                     },
                     getData: this.getData.bind(this),
                     setData: async (data) => {
@@ -330,9 +436,7 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                     name: 'Emdedder Configurator',
                     target: 'Embedders',
                     getActions: () => {
-                        const propertiesSchema = this.getPropertiesSchema();
-                        const themeSchema = this.getThemeSchema(true);
-                        return this._getActions(propertiesSchema, themeSchema);
+                        return this._getActions();
                     },
                     getLinkParams: () => {
                         const data = this.data || {};
@@ -356,135 +460,63 @@ define("@scom/scom-countdown", ["require", "exports", "@ijstech/components", "@s
                 }
             ];
         }
-        getPropertiesSchema() {
-            const schema = {
-                type: 'object',
-                properties: {
-                    date: {
-                        type: 'string',
-                        format: 'date-time',
-                    },
-                    name: {
-                        type: 'string',
-                    },
-                    showUTC: {
-                        title: 'Show UTC',
-                        default: false,
-                        type: 'boolean',
-                    },
-                    units: {
-                        type: 'string',
-                        enum: unitOptions,
-                    },
-                },
-            };
-            return schema;
-        }
-        getThemeSchema(readOnly) {
-            const themeSchema = {
-                type: 'object',
-                properties: {
-                    dark: {
-                        type: 'object',
-                        properties: {
-                            backgroundColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly
-                            },
-                            fontColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly
-                            }
-                        }
-                    },
-                    light: {
-                        type: 'object',
-                        properties: {
-                            backgroundColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly
-                            },
-                            fontColor: {
-                                type: 'string',
-                                format: 'color',
-                                readOnly
-                            }
-                        }
-                    }
-                }
-            };
-            return themeSchema;
-        }
-        _getActions(settingSchema, themeSchema) {
+        _getActions() {
             const actions = [
                 {
-                    name: 'Settings',
-                    icon: 'cog',
+                    name: 'Edit',
+                    icon: 'edit',
                     command: (builder, userInputData) => {
                         let oldData = { date: '' };
-                        return {
-                            execute: () => {
-                                oldData = Object.assign({}, this.data);
-                                if ((userInputData === null || userInputData === void 0 ? void 0 : userInputData.date) !== undefined)
-                                    this.data.date = userInputData.date;
-                                if ((userInputData === null || userInputData === void 0 ? void 0 : userInputData.name) !== undefined)
-                                    this.data.name = userInputData.name;
-                                if ((userInputData === null || userInputData === void 0 ? void 0 : userInputData.showUTC) !== undefined)
-                                    this.data.showUTC = userInputData.showUTC;
-                                if ((userInputData === null || userInputData === void 0 ? void 0 : userInputData.units) !== undefined)
-                                    this.data.units = userInputData.units;
-                                this.refreshPage();
-                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
-                                    builder.setData(this.data);
-                                this.height = 'auto';
-                            },
-                            undo: () => {
-                                this.data = Object.assign({}, oldData);
-                                this.refreshPage();
-                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
-                                    builder.setData(this.data);
-                                this.height = 'auto';
-                            },
-                            redo: () => { },
-                        };
-                    },
-                    userInputDataSchema: settingSchema,
-                },
-                {
-                    name: 'Theme Settings',
-                    icon: 'palette',
-                    command: (builder, userInputData) => {
                         let oldTag = {};
                         return {
-                            execute: async () => {
-                                if (!userInputData)
-                                    return;
+                            execute: () => {
+                                oldData = JSON.parse(JSON.stringify(this.data));
+                                const { date, name, showUTC, units } = userInputData, themeSettings = __rest(userInputData, ["date", "name", "showUTC", "units"]);
+                                const generalSettings = {
+                                    date,
+                                    name,
+                                    showUTC,
+                                    units
+                                };
+                                if (generalSettings.date !== undefined)
+                                    this.data.date = generalSettings.date;
+                                if (generalSettings.name !== undefined)
+                                    this.data.name = generalSettings.name;
+                                if (generalSettings.showUTC !== undefined)
+                                    this.data.showUTC = generalSettings.showUTC;
+                                if (generalSettings.units !== undefined)
+                                    this.data.units = generalSettings.units;
+                                this.refreshPage();
+                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
+                                    builder.setData(this.data);
+                                this.height = 'auto';
                                 oldTag = JSON.parse(JSON.stringify(this.tag));
-                                if (builder)
-                                    builder.setTag(userInputData);
+                                if (builder === null || builder === void 0 ? void 0 : builder.setTag)
+                                    builder.setTag(themeSettings);
                                 else
-                                    this.setTag(userInputData);
+                                    this.setTag(themeSettings);
                                 if (this.dappContainer)
-                                    this.dappContainer.setTag(userInputData);
+                                    this.dappContainer.setTag(themeSettings);
                             },
                             undo: () => {
-                                if (!userInputData)
-                                    return;
+                                this.data = JSON.parse(JSON.stringify(oldData));
+                                this.refreshPage();
+                                if (builder === null || builder === void 0 ? void 0 : builder.setData)
+                                    builder.setData(this.data);
+                                this.height = 'auto';
                                 this.tag = JSON.parse(JSON.stringify(oldTag));
-                                if (builder)
+                                if (builder === null || builder === void 0 ? void 0 : builder.setTag)
                                     builder.setTag(this.tag);
                                 else
                                     this.setTag(this.tag);
                                 if (this.dappContainer)
                                     this.dappContainer.setTag(this.tag);
                             },
-                            redo: () => { }
+                            redo: () => { },
                         };
                     },
-                    userInputDataSchema: themeSchema
+                    userInputDataSchema: formSchema_json_1.default.dataSchema,
+                    userInputUISchema: formSchema_json_1.default.uiSchema
                 }
             ];
             return actions;

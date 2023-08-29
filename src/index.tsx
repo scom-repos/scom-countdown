@@ -1,7 +1,6 @@
 import {
   Module,
   customModule,
-  IDataSchema,
   Container,
   ControlElement,
   customElements,
@@ -17,6 +16,7 @@ import { setDataFromSCConfig } from './store'
 import ScomDappContainer from "@scom/scom-dapp-container"
 import './index.css'
 import dataJson from './data.json'
+import formSchema from './formSchema.json'
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -56,10 +56,6 @@ export default class ScomCountDown extends Module {
   private timer: any
 
   tag: any = {}
-
-  readonly onConfirm: () => Promise<void>
-  readonly onDiscard: () => Promise<void>
-  readonly onEdit: () => Promise<void>
 
   defaultEdit?: boolean
   validate?: () => boolean
@@ -310,7 +306,7 @@ export default class ScomCountDown extends Module {
     this.height = this.tag.height
   }
 
-  private updateTag(type: 'light'|'dark', value: any) {
+  private updateTag(type: 'light' | 'dark', value: any) {
     this.tag[type] = this.tag[type] ?? {};
     for (let prop in value) {
       if (value.hasOwnProperty(prop))
@@ -337,15 +333,13 @@ export default class ScomCountDown extends Module {
         name: 'Builder Configurator',
         target: 'Builders',
         getActions: () => {
-          const propertiesSchema = this.getPropertiesSchema()
-          const themeSchema = this.getThemeSchema()
-          return this._getActions(propertiesSchema, themeSchema)
+          return this._getActions()
         },
         getData: this.getData.bind(this),
         setData: async (data: IData) => {
           const defaultData = dataJson.defaultBuilderData as any
-          defaultData.date =  moment().endOf('days').format(defaultDateTimeFormat)
-          await this.setData({...defaultData, ...data})
+          defaultData.date = moment().endOf('days').format(defaultDateTimeFormat)
+          await this.setData({ ...defaultData, ...data })
         },
         getTag: this.getTag.bind(this),
         setTag: this.setTag.bind(this)
@@ -354,9 +348,7 @@ export default class ScomCountDown extends Module {
         name: 'Emdedder Configurator',
         target: 'Embedders',
         getActions: () => {
-          const propertiesSchema = this.getPropertiesSchema()
-          const themeSchema = this.getThemeSchema(true)
-          return this._getActions(propertiesSchema, themeSchema)
+          return this._getActions()
         },
         getLinkParams: () => {
           const data = this.data || {};
@@ -384,124 +376,60 @@ export default class ScomCountDown extends Module {
     ]
   }
 
-  private getPropertiesSchema() {
-    const schema: IDataSchema = {
-      type: 'object',
-      properties: {
-        date: {
-          type: 'string',
-          format: 'date-time',
-        },
-        name: {
-          type: 'string',
-        },
-        showUTC: {
-          title: 'Show UTC',
-          default: false,
-          type: 'boolean',
-        },
-        units: {
-          type: 'string',
-          enum: unitOptions,
-        },
-      },
-    }
-    return schema
-  }
-
-  private getThemeSchema(readOnly?: boolean) {
-    const themeSchema: IDataSchema = {
-      type: 'object',
-      properties: {
-        dark: {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color',
-              readOnly
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color',
-              readOnly
-            }
-          }
-        },
-        light: {
-          type: 'object',
-          properties: {
-            backgroundColor: {
-              type: 'string',
-              format: 'color',
-              readOnly
-            },
-            fontColor: {
-              type: 'string',
-              format: 'color',
-              readOnly
-            }
-          }
-        }
-      }
-    }
-    return themeSchema
-  }
-
-  private _getActions(settingSchema: IDataSchema, themeSchema: IDataSchema) {
+  private _getActions() {
     const actions = [
       {
-        name: 'Settings',
-        icon: 'cog',
+        name: 'Edit',
+        icon: 'edit',
         command: (builder: any, userInputData: any) => {
-          let oldData = {date: ''}
-          return {
-            execute: () => {
-              oldData = {...this.data}
-              if (userInputData?.date !== undefined) this.data.date = userInputData.date
-              if (userInputData?.name !== undefined) this.data.name = userInputData.name
-              if (userInputData?.showUTC !== undefined) this.data.showUTC = userInputData.showUTC
-              if (userInputData?.units !== undefined) this.data.units = userInputData.units
-              this.refreshPage()
-              if (builder?.setData) builder.setData(this.data)
-              this.height = 'auto'
-            },
-            undo: () => {
-              this.data = {...oldData}
-              this.refreshPage()
-              if (builder?.setData) builder.setData(this.data)
-              this.height = 'auto'
-            },
-            redo: () => {},
-          }
-        },
-        userInputDataSchema: settingSchema as IDataSchema,
-      },
-      {
-        name: 'Theme Settings',
-        icon: 'palette',
-        command: (builder: any, userInputData: any) => {
+          let oldData = { date: '' }
           let oldTag = {}
           return {
-            execute: async () => {
-              if (!userInputData) return;
-              oldTag = JSON.parse(JSON.stringify(this.tag));
-              if (builder) builder.setTag(userInputData);
-              else this.setTag(userInputData);
-              if (this.dappContainer) this.dappContainer.setTag(userInputData);
+            execute: () => {
+              oldData = JSON.parse(JSON.stringify(this.data))
+              const {
+                date,
+                name,
+                showUTC,
+                units,
+                ...themeSettings
+              } = userInputData
 
+              const generalSettings = {
+                date,
+                name,
+                showUTC,
+                units
+              }
+              if (generalSettings.date !== undefined) this.data.date = generalSettings.date
+              if (generalSettings.name !== undefined) this.data.name = generalSettings.name
+              if (generalSettings.showUTC !== undefined) this.data.showUTC = generalSettings.showUTC
+              if (generalSettings.units !== undefined) this.data.units = generalSettings.units
+              this.refreshPage()
+              if (builder?.setData) builder.setData(this.data)
+              this.height = 'auto'
+
+              oldTag = JSON.parse(JSON.stringify(this.tag))
+              if (builder?.setTag) builder.setTag(themeSettings)
+              else this.setTag(themeSettings)
+              if (this.dappContainer) this.dappContainer.setTag(themeSettings)
             },
             undo: () => {
-              if (!userInputData) return;
-              this.tag = JSON.parse(JSON.stringify(oldTag));
-              if (builder) builder.setTag(this.tag);
-              else this.setTag(this.tag);
-              if (this.dappContainer) this.dappContainer.setTag(this.tag);
+              this.data = JSON.parse(JSON.stringify(oldData))
+              this.refreshPage()
+              if (builder?.setData) builder.setData(this.data)
+              this.height = 'auto'
+
+              this.tag = JSON.parse(JSON.stringify(oldTag))
+              if (builder?.setTag) builder.setTag(this.tag)
+              else this.setTag(this.tag)
+              if (this.dappContainer) this.dappContainer.setTag(this.tag)
             },
-            redo: () => { }
+            redo: () => { },
           }
         },
-        userInputDataSchema: themeSchema
+        userInputDataSchema: formSchema.dataSchema,
+        userInputUISchema: formSchema.uiSchema
       }
     ]
     return actions
@@ -514,8 +442,8 @@ export default class ScomCountDown extends Module {
           verticalAlignment='center'
           horizontalAlignment='center'
           class='text-center'
-          padding={{left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem'}}
-          background={{color: Theme.background.main}}
+          padding={{ left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem' }}
+          background={{ color: Theme.background.main }}
         >
           <i-label
             id='lbName'
@@ -523,7 +451,7 @@ export default class ScomCountDown extends Module {
             width='100%'
             margin={{ bottom: '1rem' }}
           ></i-label>
-          <i-label id='lbUTC' visible={false} width='100%' font={{color: Theme.text.primary}}></i-label>
+          <i-label id='lbUTC' visible={false} width='100%' font={{ color: Theme.text.primary }}></i-label>
           <i-hstack
             id='pnlCounter'
             gap='3rem'

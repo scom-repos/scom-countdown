@@ -59,9 +59,87 @@ declare module "@scom/scom-countdown/data.json.ts" {
     };
     export default _default;
 }
+/// <amd-module name="@scom/scom-countdown/formSchema.json.ts" />
+declare module "@scom/scom-countdown/formSchema.json.ts" {
+    const _default_1: {
+        dataSchema: {
+            type: string;
+            properties: {
+                date: {
+                    type: string;
+                    format: string;
+                };
+                name: {
+                    type: string;
+                };
+                showUTC: {
+                    title: string;
+                    default: boolean;
+                    type: string;
+                };
+                units: {
+                    type: string;
+                    enum: string[];
+                };
+                dark: {
+                    type: string;
+                    properties: {
+                        backgroundColor: {
+                            type: string;
+                            format: string;
+                        };
+                        fontColor: {
+                            type: string;
+                            format: string;
+                        };
+                    };
+                };
+                light: {
+                    type: string;
+                    properties: {
+                        backgroundColor: {
+                            type: string;
+                            format: string;
+                        };
+                        fontColor: {
+                            type: string;
+                            format: string;
+                        };
+                    };
+                };
+            };
+        };
+        uiSchema: {
+            type: string;
+            elements: ({
+                type: string;
+                label: string;
+                elements: {
+                    type: string;
+                    elements: {
+                        type: string;
+                        scope: string;
+                    }[];
+                }[];
+            } | {
+                type: string;
+                label: string;
+                elements: {
+                    type: string;
+                    elements: {
+                        type: string;
+                        label: string;
+                        scope: string;
+                    }[];
+                }[];
+            })[];
+        };
+    };
+    export default _default_1;
+}
 /// <amd-module name="@scom/scom-countdown" />
 declare module "@scom/scom-countdown" {
-    import { Module, IDataSchema, Container, ControlElement } from '@ijstech/components';
+    import { Module, Container, ControlElement } from '@ijstech/components';
     import { IData } from "@scom/scom-countdown/interface.ts";
     import "@scom/scom-countdown/index.css.ts";
     interface ScomCountDownElement extends ControlElement {
@@ -88,9 +166,6 @@ declare module "@scom/scom-countdown" {
         private dappContainer;
         private timer;
         tag: any;
-        readonly onConfirm: () => Promise<void>;
-        readonly onDiscard: () => Promise<void>;
-        readonly onEdit: () => Promise<void>;
         defaultEdit?: boolean;
         validate?: () => boolean;
         edit: () => Promise<void>;
@@ -136,7 +211,78 @@ declare module "@scom/scom-countdown" {
                     undo: () => void;
                     redo: () => void;
                 };
-                userInputDataSchema: IDataSchema;
+                userInputDataSchema: {
+                    type: string;
+                    properties: {
+                        date: {
+                            type: string;
+                            format: string;
+                        };
+                        name: {
+                            type: string;
+                        };
+                        showUTC: {
+                            title: string;
+                            default: boolean;
+                            type: string;
+                        };
+                        units: {
+                            type: string;
+                            enum: string[];
+                        };
+                        dark: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                        light: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                    };
+                };
+                userInputUISchema: {
+                    type: string;
+                    elements: ({
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    } | {
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                label: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    })[];
+                };
             }[];
             getData: any;
             setData: (data: IData) => Promise<void>;
@@ -155,7 +301,78 @@ declare module "@scom/scom-countdown" {
                     undo: () => void;
                     redo: () => void;
                 };
-                userInputDataSchema: IDataSchema;
+                userInputDataSchema: {
+                    type: string;
+                    properties: {
+                        date: {
+                            type: string;
+                            format: string;
+                        };
+                        name: {
+                            type: string;
+                        };
+                        showUTC: {
+                            title: string;
+                            default: boolean;
+                            type: string;
+                        };
+                        units: {
+                            type: string;
+                            enum: string[];
+                        };
+                        dark: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                        light: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                    };
+                };
+                userInputUISchema: {
+                    type: string;
+                    elements: ({
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    } | {
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                label: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    })[];
+                };
             }[];
             getLinkParams: () => {
                 data: string;
@@ -166,8 +383,6 @@ declare module "@scom/scom-countdown" {
             getTag: any;
             setTag: any;
         })[];
-        private getPropertiesSchema;
-        private getThemeSchema;
         private _getActions;
         render(): any;
     }

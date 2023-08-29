@@ -1,0 +1,13 @@
+{
+    "name": "@scom/scom-countdown",
+    "type": "widget",
+    "version": "0.1.4",
+    "dependencies": [
+        "@ijstech/components",
+        "@ijstech/eth-contract",
+        "@ijstech/eth-wallet",
+        "@scom/scom-network-list",
+        "@scom/scom-multicall",
+        "@scom/scom-dapp-container"
+    ]
+}
