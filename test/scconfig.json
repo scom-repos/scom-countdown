@@ -1,12 +1,7 @@
 {
-  "env": "testnet",
   "main": "@scom/dapp",
-  "assets": "@modules/assets",
   "moduleDir": "modules",
   "modules": {
-    "@modules/assets": {
-      "path": "assets"
-    },
     "@modules/module1": {
       "path": "module1"
     }
@@ -42,10 +37,7 @@
       "text": {
         "secondary": "hsla(0, 0%, 100%, 0.6)"
       },
-      "divider": "#FFFFFF",
-      "typography": {
-        "fontFamily": "Raleway"
-      }
+      "divider": "#FFFFFF"
     },
     "light": {}
   },
