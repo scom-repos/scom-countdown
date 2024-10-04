@@ -1,4 +1,4 @@
-const unitOptions = ['days, hours, minutes, seconds', 'days, hours, minutes'];
+export const unitOptions = ['days, hours, minutes, seconds', 'days, hours, minutes'];
 
 const theme = {
     type: 'object',
@@ -18,9 +18,11 @@ export default {
     dataSchema: {
         type: 'object',
         properties: {
-            date: {
-                type: 'string',
-                format: 'date-time',
+            targetTime: {
+                type: 'number',
+                title: 'Target Time',
+                tooltip: 'Unix timestamp in second',
+                required: true
             },
             name: {
                 type: 'string',
@@ -50,7 +52,7 @@ export default {
                         elements: [
                             {
                                 type: 'Control',
-                                scope: '#/properties/date'
+                                scope: '#/properties/targetTime'
                             },
                             {
                                 type: 'Control',

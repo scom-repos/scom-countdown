@@ -1,5 +1,5 @@
 {
-  "main": "@scom/dapp",
+  "main": "@modules/module1",
   "moduleDir": "modules",
   "modules": {
     "@modules/module1": {
@@ -7,7 +7,6 @@
     }
   },
   "dependencies": {
-    "@scom/dapp": "*",
     "@scom/scom-dapp-container": "*",
     "@scom/scom-countdown": "*"
   },

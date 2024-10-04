@@ -1,73 +1,21 @@
-/// <amd-module name="@scom/scom-countdown/interface.ts" />
-declare module "@scom/scom-countdown/interface.ts" {
-    import { IDataSchema } from "@ijstech/components";
-    export interface ICommand {
-        execute(): void;
-        undo(): void;
-        redo(): void;
-    }
-    export interface IPageBlockAction {
-        name: string;
-        icon: string;
-        command: (builder: any, userInputData: any) => ICommand;
-        userInputDataSchema: IDataSchema;
-    }
-    export interface PageBlock {
-        getActions: () => IPageBlockAction[];
-        getData: () => any;
-        setData: (data: any) => Promise<void>;
-        getTag: () => any;
-        setTag: (tag: any) => Promise<void>;
-        defaultEdit?: boolean;
-        tag?: any;
-        validate?: () => boolean;
-        readonly onEdit: () => Promise<void>;
-        readonly onConfirm: () => Promise<void>;
-        readonly onDiscard: () => Promise<void>;
-        edit: () => Promise<void>;
-        confirm: () => Promise<void>;
-        discard: () => Promise<void>;
-    }
-    export interface IData {
-        date: string;
-        name?: string;
-        showUTC?: boolean;
-        units?: string;
-        showHeader?: boolean;
-        showFooter?: boolean;
-    }
-}
-/// <amd-module name="@scom/scom-countdown/store.ts" />
-declare module "@scom/scom-countdown/store.ts" {
-    export const state: {
-        ipfsGatewayUrl: string;
-    };
-    export const setDataFromSCConfig: (options: any) => void;
-    export const setIPFSGatewayUrl: (url: string) => void;
-    export const getIPFSGatewayUrl: () => string;
-}
 /// <amd-module name="@scom/scom-countdown/index.css.ts" />
-declare module "@scom/scom-countdown/index.css.ts" { }
-/// <amd-module name="@scom/scom-countdown/data.json.ts" />
-declare module "@scom/scom-countdown/data.json.ts" {
-    const _default: {
-        ipfsGatewayUrl: string;
-        defaultBuilderData: {
-            name: string;
-            showUTC: boolean;
-        };
-    };
-    export default _default;
+declare module "@scom/scom-countdown/index.css.ts" {
+    export const textCenterStyle: string;
+    export const valueFontStyle: string;
+    export const unitFontStyle: string;
 }
 /// <amd-module name="@scom/scom-countdown/formSchema.json.ts" />
 declare module "@scom/scom-countdown/formSchema.json.ts" {
-    const _default_1: {
+    export const unitOptions: string[];
+    const _default: {
         dataSchema: {
             type: string;
             properties: {
-                date: {
+                targetTime: {
                     type: string;
-                    format: string;
+                    title: string;
+                    tooltip: string;
+                    required: boolean;
                 };
                 name: {
                     type: string;
@@ -135,71 +83,46 @@ declare module "@scom/scom-countdown/formSchema.json.ts" {
             })[];
         };
     };
+    export default _default;
+}
+/// <amd-module name="@scom/scom-countdown/data.json.ts" />
+declare module "@scom/scom-countdown/data.json.ts" {
+    const _default_1: {
+        defaultBuilderData: {
+            name: string;
+            showUTC: boolean;
+        };
+    };
     export default _default_1;
 }
-/// <amd-module name="@scom/scom-countdown" />
-declare module "@scom/scom-countdown" {
-    import { Module, Container, ControlElement } from '@ijstech/components';
-    import { IData } from "@scom/scom-countdown/interface.ts";
-    import "@scom/scom-countdown/index.css.ts";
-    interface ScomCountDownElement extends ControlElement {
-        lazyLoad?: boolean;
-        date?: string;
+/// <amd-module name="@scom/scom-countdown/model.ts" />
+declare module "@scom/scom-countdown/model.ts" {
+    import { Module } from '@ijstech/components';
+    export interface ICountDownData {
+        targetTime?: number;
         name?: string;
         showUTC?: boolean;
         units?: string;
         showHeader?: boolean;
         showFooter?: boolean;
     }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['i-scom-countdown']: ScomCountDownElement;
-            }
-        }
+    interface IModelOptions {
+        refreshWidget: () => void;
+        refreshDappContainer: () => void;
+        setContaiterTag: (value: any) => void;
     }
-    export default class ScomCountDown extends Module {
-        private data;
-        private pnlCounter;
-        private lbName;
-        private lbUTC;
-        private dappContainer;
-        private timer;
-        tag: any;
-        defaultEdit?: boolean;
-        validate?: () => boolean;
-        edit: () => Promise<void>;
-        confirm: () => Promise<void>;
-        discard: () => Promise<void>;
-        constructor(parent?: Container, options?: any);
-        init(): void;
-        private getInitTag;
-        static create(options?: ScomCountDownElement, parent?: Container): Promise<ScomCountDown>;
+    export default class Model {
+        private module;
+        private options;
+        private _data;
+        constructor(module: Module, options: IModelOptions);
         get name(): string;
-        set name(value: string);
-        get date(): string;
-        set date(value: string);
+        get targetTime(): number;
         get showUTC(): boolean;
-        set showUTC(value: boolean);
-        get unitArray(): string[];
         get units(): string;
-        set units(value: string);
-        get showFooter(): boolean;
-        set showFooter(value: boolean);
+        get unitArray(): string[];
         get showHeader(): boolean;
-        set showHeader(value: boolean);
-        private getData;
-        private setData;
-        private refreshPage;
-        private renderCountItem;
-        private clearCountdown;
-        private getValue;
-        private renderUI;
-        private getTag;
-        private setTag;
-        private updateTag;
-        private updateStyle;
-        private updateTheme;
+        get showFooter(): boolean;
         getConfigurators(): ({
             name: string;
             target: string;
@@ -214,99 +137,11 @@ declare module "@scom/scom-countdown" {
                 userInputDataSchema: {
                     type: string;
                     properties: {
-                        date: {
+                        targetTime: {
                             type: string;
-                            format: string;
-                        };
-                        name: {
-                            type: string;
-                        };
-                        showUTC: {
                             title: string;
-                            default: boolean;
-                            type: string;
-                        };
-                        units: {
-                            type: string;
-                            enum: string[];
-                        };
-                        dark: {
-                            type: string;
-                            properties: {
-                                backgroundColor: {
-                                    type: string;
-                                    format: string;
-                                };
-                                fontColor: {
-                                    type: string;
-                                    format: string;
-                                };
-                            };
-                        };
-                        light: {
-                            type: string;
-                            properties: {
-                                backgroundColor: {
-                                    type: string;
-                                    format: string;
-                                };
-                                fontColor: {
-                                    type: string;
-                                    format: string;
-                                };
-                            };
-                        };
-                    };
-                };
-                userInputUISchema: {
-                    type: string;
-                    elements: ({
-                        type: string;
-                        label: string;
-                        elements: {
-                            type: string;
-                            elements: {
-                                type: string;
-                                scope: string;
-                            }[];
-                        }[];
-                    } | {
-                        type: string;
-                        label: string;
-                        elements: {
-                            type: string;
-                            elements: {
-                                type: string;
-                                label: string;
-                                scope: string;
-                            }[];
-                        }[];
-                    })[];
-                };
-            }[];
-            getData: any;
-            setData: (data: IData) => Promise<void>;
-            getTag: any;
-            setTag: any;
-            getLinkParams?: undefined;
-            setLinkParams?: undefined;
-        } | {
-            name: string;
-            target: string;
-            getActions: () => {
-                name: string;
-                icon: string;
-                command: (builder: any, userInputData: any) => {
-                    execute: () => void;
-                    undo: () => void;
-                    redo: () => void;
-                };
-                userInputDataSchema: {
-                    type: string;
-                    properties: {
-                        date: {
-                            type: string;
-                            format: string;
+                            tooltip: string;
+                            required: boolean;
                         };
                         name: {
                             type: string;
@@ -382,8 +217,350 @@ declare module "@scom/scom-countdown" {
             setData: any;
             getTag: any;
             setTag: any;
+        } | {
+            name: string;
+            target: string;
+            getActions: (category?: string) => {
+                name: string;
+                icon: string;
+                command: (builder: any, userInputData: any) => {
+                    execute: () => void;
+                    undo: () => void;
+                    redo: () => void;
+                };
+                userInputDataSchema: {
+                    type: string;
+                    properties: {
+                        targetTime: {
+                            type: string;
+                            title: string;
+                            tooltip: string;
+                            required: boolean;
+                        };
+                        name: {
+                            type: string;
+                        };
+                        showUTC: {
+                            title: string;
+                            default: boolean;
+                            type: string;
+                        };
+                        units: {
+                            type: string;
+                            enum: string[];
+                        };
+                        dark: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                        light: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                    };
+                };
+                userInputUISchema: {
+                    type: string;
+                    elements: ({
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    } | {
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                label: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    })[];
+                };
+            }[];
+            getData: any;
+            setData: any;
+            getTag: any;
+            setTag: any;
+            getLinkParams?: undefined;
+            setLinkParams?: undefined;
         })[];
+        getData(): ICountDownData;
+        setData(value: ICountDownData): Promise<void>;
+        getTag(): any;
+        setTag(value: any, init?: boolean): void;
+        private updateTag;
+        private updateStyle;
+        private updateTheme;
         private _getActions;
+        getValue(unit: string, duration: any): number;
+    }
+}
+/// <amd-module name="@scom/scom-countdown" />
+declare module "@scom/scom-countdown" {
+    import { Module, Container, ControlElement } from '@ijstech/components';
+    import "@scom/scom-countdown/index.css.ts";
+    interface IData {
+        targetTime?: number;
+        name?: string;
+        showUTC?: boolean;
+        units?: string;
+        showHeader?: boolean;
+        showFooter?: boolean;
+    }
+    interface ScomCountDownElement extends ControlElement, IData {
+        lazyLoad?: boolean;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-countdown']: ScomCountDownElement;
+            }
+        }
+    }
+    export default class ScomCountDown extends Module {
+        private model;
+        private pnlCounter;
+        private lbName;
+        private lbUTC;
+        private dappContainer;
+        private timer;
+        tag: any;
+        defaultEdit?: boolean;
+        constructor(parent?: Container, options?: any);
+        static create(options?: ScomCountDownElement, parent?: Container): Promise<ScomCountDown>;
+        get name(): string;
+        get targetTime(): number;
+        get showUTC(): boolean;
+        get unitArray(): string[];
+        get units(): string;
+        get showFooter(): boolean;
+        get showHeader(): boolean;
+        getData(): import("@scom/scom-countdown/model.ts").ICountDownData;
+        setData(value: IData): Promise<void>;
+        getTag(): any;
+        setTag(value: any, init?: boolean): Promise<void>;
+        getConfigurators(): ({
+            name: string;
+            target: string;
+            getActions: () => {
+                name: string;
+                icon: string;
+                command: (builder: any, userInputData: any) => {
+                    execute: () => void;
+                    undo: () => void;
+                    redo: () => void;
+                };
+                userInputDataSchema: {
+                    type: string;
+                    properties: {
+                        targetTime: {
+                            type: string;
+                            title: string;
+                            tooltip: string;
+                            required: boolean;
+                        };
+                        name: {
+                            type: string;
+                        };
+                        showUTC: {
+                            title: string;
+                            default: boolean;
+                            type: string;
+                        };
+                        units: {
+                            type: string;
+                            enum: string[];
+                        };
+                        dark: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                        light: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                    };
+                };
+                userInputUISchema: {
+                    type: string;
+                    elements: ({
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    } | {
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                label: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    })[];
+                };
+            }[];
+            getLinkParams: () => {
+                data: string;
+            };
+            setLinkParams: (params: any) => Promise<void>;
+            getData: any;
+            setData: any;
+            getTag: any;
+            setTag: any;
+        } | {
+            name: string;
+            target: string;
+            getActions: (category?: string) => {
+                name: string;
+                icon: string;
+                command: (builder: any, userInputData: any) => {
+                    execute: () => void;
+                    undo: () => void;
+                    redo: () => void;
+                };
+                userInputDataSchema: {
+                    type: string;
+                    properties: {
+                        targetTime: {
+                            type: string;
+                            title: string;
+                            tooltip: string;
+                            required: boolean;
+                        };
+                        name: {
+                            type: string;
+                        };
+                        showUTC: {
+                            title: string;
+                            default: boolean;
+                            type: string;
+                        };
+                        units: {
+                            type: string;
+                            enum: string[];
+                        };
+                        dark: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                        light: {
+                            type: string;
+                            properties: {
+                                backgroundColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                                fontColor: {
+                                    type: string;
+                                    format: string;
+                                };
+                            };
+                        };
+                    };
+                };
+                userInputUISchema: {
+                    type: string;
+                    elements: ({
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    } | {
+                        type: string;
+                        label: string;
+                        elements: {
+                            type: string;
+                            elements: {
+                                type: string;
+                                label: string;
+                                scope: string;
+                            }[];
+                        }[];
+                    })[];
+                };
+            }[];
+            getData: any;
+            setData: any;
+            getTag: any;
+            setTag: any;
+            getLinkParams?: undefined;
+            setLinkParams?: undefined;
+        })[];
+        private setContaiterTag;
+        private refreshDappContainer;
+        private refreshPage;
+        private renderCountItem;
+        private clearCountdown;
+        private renderUI;
+        private updateTimerUI;
+        private initModel;
+        init(): void;
         render(): any;
     }
 }
