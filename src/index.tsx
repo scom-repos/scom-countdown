@@ -8,30 +8,26 @@ import {
   HStack,
   moment,
   Styles
-} from '@ijstech/components'
-import { } from '@ijstech/eth-contract'
-import { } from '@ijstech/eth-wallet'
-import { IData } from './interface'
-import { setDataFromSCConfig } from './store'
-import ScomDappContainer from "@scom/scom-dapp-container"
-import './index.css'
-import dataJson from './data.json'
-import formSchema from './formSchema.json'
+} from '@ijstech/components';
+import ScomDappContainer from "@scom/scom-dapp-container";
+import './index.css';
+import { unitOptions } from './formSchema.json';
+import Model from './model';
+import { textCenterStyle, unitFontStyle, valueFontStyle } from './index.css';
 
 const Theme = Styles.Theme.ThemeVars;
 
-interface ScomCountDownElement extends ControlElement {
-  lazyLoad?: boolean;
-  date?: string
-  name?: string
-  showUTC?: boolean
-  units?: string
+interface IData {
+  targetTime?: number;
+  name?: string;
+  showUTC?: boolean;
+  units?: string;
   showHeader?: boolean;
   showFooter?: boolean;
 }
-
-const defaultDateTimeFormat = 'MM/DD/YYYY HH:mm:ss'
-const unitOptions = ['days, hours, minutes, seconds', 'days, hours, minutes']
+interface ScomCountDownElement extends ControlElement, IData {
+  lazyLoad?: boolean;
+}
 
 declare global {
   namespace JSX {
@@ -44,421 +40,250 @@ declare global {
 @customModule
 @customElements('i-scom-countdown')
 export default class ScomCountDown extends Module {
-  private data: IData = {
-    date: '',
-  }
-
-  private pnlCounter: HStack
-  private lbName: Label
-  private lbUTC: Label
+  private model: Model;
+  private pnlCounter: HStack;
+  private lbName: Label;
+  private lbUTC: Label;
   private dappContainer: ScomDappContainer;
+  private timer: any;
 
-  private timer: any
-
-  tag: any = {}
-
-  defaultEdit?: boolean
-  validate?: () => boolean
-  edit: () => Promise<void>
-  confirm: () => Promise<void>
-  discard: () => Promise<void>
+  tag: any = {};
+  defaultEdit?: boolean;
 
   constructor(parent?: Container, options?: any) {
-    super(parent, options)
-    if (dataJson) setDataFromSCConfig(dataJson)
-  }
-
-  init() {
-    this.isReadyCallbackQueued = true
-    super.init()
-    const width = this.getAttribute('width', true)
-    const height = this.getAttribute('height', true)
-    this.setTag({
-      width: width ? this.width : 'auto',
-      height: height ? this.height : 'auto',
-      ...this.getInitTag()
-    });
-    const lazyLoad = this.getAttribute('lazyLoad', true, false);
-    if (!lazyLoad) {
-      this.data.name = this.getAttribute('name', true)
-      this.data.showUTC = this.getAttribute('showUTC', true, false)
-      this.data.date = this.getAttribute(
-        'date',
-        true,
-        moment().endOf('days').format(defaultDateTimeFormat)
-      )
-      this.data.units = this.getAttribute('units', true, unitOptions[0])
-      this.data.showHeader = this.getAttribute('showHeader', true, false)
-      this.data.showFooter = this.getAttribute('showFooter', true, false)
-      this.setData(this.data)
-    }
-    this.isReadyCallbackQueued = false
-    this.executeReadyCallback()
-  }
-
-  private getInitTag() {
-    const getColors = (vars: any) => {
-      return {
-        "backgroundColor": vars.background.main,
-        "fontColor": '#ffffff'
-      }
-    }
-    return {
-      dark: getColors(Styles.Theme.darkTheme),
-      light: getColors(Styles.Theme.defaultTheme)
-    }
+    super(parent, options);
   }
 
   static async create(options?: ScomCountDownElement, parent?: Container) {
-    let self = new this(parent, options)
-    await self.ready()
-    return self
+    let self = new this(parent, options);
+    await self.ready();
+    return self;
   }
 
   get name() {
-    return this.data.name ?? ''
-  }
-  set name(value: string) {
-    this.data.name = value
-    if (this.lbName) {
-      this.lbName.visible = !!this.data.name
-      this.lbName.caption = value
-    }
+    return this.model.name;
   }
 
-  get date() {
-    let end = moment(this.data.date)
-    if (!end.isValid()) end = moment(this.data.date, defaultDateTimeFormat)
-    const utcDate = moment(this.data.date)
-    return end.isValid() ? utcDate.format(defaultDateTimeFormat) : ''
-  }
-  set date(value: string) {
-    this.data.date = value
+  get targetTime() {
+    return this.model.targetTime;
   }
 
   get showUTC() {
-    return this.data.showUTC ?? false
-  }
-  set showUTC(value: boolean) {
-    this.data.showUTC = value
-    if (this.lbUTC) this.lbUTC.visible = this.showUTC
+    return this.model.showUTC;
   }
 
   get unitArray() {
-    return this.units.split(',').map(unit => unit.trim())
+    return this.model.unitArray;
   }
 
-  get units(): string {
-    return this.data.units || unitOptions[0]
-  }
-  set units(value: string) {
-    this.data.units = value || unitOptions[0]
+  get units() {
+    return this.model.units;
   }
 
   get showFooter() {
-    return this.data.showFooter ?? false
-  }
-  set showFooter(value: boolean) {
-    this.data.showFooter = value
-    if (this.dappContainer) this.dappContainer.showFooter = this.showFooter;
+    return this.model.showFooter;
   }
 
   get showHeader() {
-    return this.data.showHeader ?? false
-  }
-  set showHeader(value: boolean) {
-    this.data.showHeader = value
-    if (this.dappContainer) this.dappContainer.showHeader = this.showHeader;
+    return this.model.showHeader;
   }
 
-  private getData() {
-    return this.data
+  getData() {
+    return this.model.getData();
   }
 
-  private async setData(value: IData) {
-    this.data = value
-    !this.lbName.isConnected && (await this.lbName.ready())
-    !this.lbUTC.isConnected && (await this.lbUTC.ready())
-    const data: any = {
+  async setData(value: IData) {
+    this.model.setData(value);
+  }
+
+  getTag() {
+    return this.tag;
+  }
+
+  async setTag(value: any, init?: boolean) {
+    this.model.setTag(value, init);
+  }
+
+  getConfigurators() {
+    this.initModel();
+    return this.model.getConfigurators();
+  }
+
+  private setContaiterTag(value: any) {
+    if (this.dappContainer) this.dappContainer.setTag(value);
+  }
+
+  private refreshDappContainer = () => {
+    const data = {
       showWalletNetwork: false,
       showFooter: this.showFooter,
       showHeader: this.showHeader
     }
-    if (this.dappContainer?.setData) this.dappContainer.setData(data)
-    this.refreshPage()
+    if (this.dappContainer?.setData) this.dappContainer.setData(data);
   }
 
   private refreshPage() {
-    this.renderUI()
-    this.timer && clearInterval(this.timer)
-    this.timer = setInterval(() => this.renderUI(), 1000)
+    this.renderUI();
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+    this.timer = setInterval(() => this.updateTimerUI(), 1000);
   }
 
   private renderCountItem(unit: string, value: number) {
     const itemEl = (
-      <i-vstack verticalAlignment='center' horizontalAlignment='center'>
+      <i-vstack gap="0.5rem" verticalAlignment="center" horizontalAlignment="center">
         <i-label
           caption={`${value < 10 ? '0' + value : value}`}
-          font={{ size: '7.688rem', color: Theme.text.primary }}
-        ></i-label>
-        <i-label caption={unit} font={{ size: '1.5rem', color: Theme.text.primary }}></i-label>
+          font={{ color: Theme.text.primary }}
+          class={valueFontStyle}
+        />
+        <i-label
+          caption={unit.toUpperCase()}
+          font={{ color: Theme.text.primary }}
+          class={unitFontStyle}
+          opacity={0.6}
+        />
       </i-vstack>
     )
-    return itemEl
+    return itemEl;
   }
 
   private clearCountdown() {
-    this.pnlCounter.clearInnerHTML()
+    this.pnlCounter.clearInnerHTML();
     for (let unit of this.unitArray) {
-      const el = this.renderCountItem(unit, 0)
-      el && this.pnlCounter.appendChild(el)
+      const el = this.renderCountItem(unit, 0);
+      if (el) {
+        this.pnlCounter.appendChild(el);
+      }
     }
-    this.timer && clearInterval(this.timer)
-  }
-
-  private getValue(unit: string, duration: any) {
-    let value = 0
-    switch (unit) {
-      case 'seconds':
-        value = this.unitArray.includes('minutes')
-          ? duration.seconds()
-          : Math.floor(duration.asSeconds())
-        break
-      case 'minutes':
-        value = this.unitArray.includes('hours')
-          ? duration.minutes()
-          : Math.floor(duration.asMinutes())
-        break
-      case 'hours':
-        value = this.unitArray.includes('days')
-          ? duration.hours()
-          : Math.floor(duration.asHours())
-        break
-      case 'days':
-        value = this.unitArray.includes('weeks')
-          ? duration.days()
-          : Math.floor(duration.asDays())
-        break
-      case 'weeks':
-        value = this.unitArray.includes('months')
-          ? duration.weeks()
-          : Math.floor(duration.asWeeks())
-        break
-      case 'months':
-        value = this.unitArray.includes('years')
-          ? duration.months()
-          : Math.floor(duration.asMonths())
-        break
-      case 'years':
-        value = duration.years()
-        break
+    if (this.timer) {
+      clearInterval(this.timer);
     }
-    return value
   }
 
   private renderUI() {
     if (this.lbName) {
-      this.lbName.visible = !!this.data.name
-      this.lbName.caption = this.data.name
+      this.lbName.visible = !!this.name;
+      this.lbName.caption = this.name;
     }
     if (this.lbUTC) {
-      this.lbUTC.visible = this.showUTC
-      this.lbUTC.caption = this.date ? moment.utc(this.date).toString() : ''
+      this.lbUTC.visible = this.showUTC;
+      this.lbUTC.caption = this.targetTime ? moment.unix(this.targetTime).utc(true).format('MM/DD/YYYY HH:mm:ss [GMT]Z') : '';
     }
-    const now = moment()
-    let end = moment(this.date)
-    const isTimeout = end.diff(now) <= 0
+    this.updateTimerUI();
+  }
+
+  private updateTimerUI() {
+    const now = moment();
+    const end = moment.unix(this.targetTime);
+    const isTimeout = end.diff(now) <= 0;
     if (isTimeout || !end.isValid()) {
-      this.clearCountdown()
-      return
+      this.clearCountdown();
+      return;
     }
-    this.pnlCounter.clearInnerHTML()
-    const duration = moment.duration(end.diff(now))
+    this.pnlCounter.clearInnerHTML();
+    const duration = moment.duration(end.diff(now));
     for (let unit of this.unitArray) {
-      const value = this.getValue(unit, duration)
-      const el = this.renderCountItem(unit, value)
-      el && this.pnlCounter.appendChild(el)
+      const value = this.model.getValue(unit, duration);
+      const el = this.renderCountItem(unit, value);
+      if (el) {
+        this.pnlCounter.appendChild(el);
+      }
       if (end.diff(now) <= 0) {
-        this.clearCountdown()
-        return
+        this.clearCountdown();
+        return;
       }
     }
   }
 
-  private getTag() {
-    return this.tag
-  }
-
-  private async setTag(value: any, init?: boolean) {
-    const newValue = value || {};
-    for (let prop in newValue) {
-      if (newValue.hasOwnProperty(prop)) {
-        if (prop === 'light' || prop === 'dark')
-          this.updateTag(prop, newValue[prop]);
-        else
-          this.tag[prop] = newValue[prop];
-      }
-    }
-    if (this.dappContainer && !init) this.dappContainer.setTag(this.tag);
-    this.updateTheme();
-    this.display = 'block'
-    this.width = this.tag.width
-    this.height = this.tag.height
-  }
-
-  private updateTag(type: 'light' | 'dark', value: any) {
-    this.tag[type] = this.tag[type] ?? {};
-    for (let prop in value) {
-      if (value.hasOwnProperty(prop))
-        this.tag[type][prop] = value[prop];
+  private initModel() {
+    if (!this.model) {
+      this.model = new Model(this, {
+        refreshWidget: this.refreshPage.bind(this),
+        refreshDappContainer: this.refreshDappContainer.bind(this),
+        setContaiterTag: this.setContaiterTag.bind(this)
+      })
     }
   }
 
-  private updateStyle(name: string, value: any) {
-    value ?
-      this.style.setProperty(name, value) :
-      this.style.removeProperty(name);
-  }
-
-  private updateTheme() {
-    const themeVar = this.dappContainer?.theme || 'light';
-    this.updateStyle('--text-primary', this.tag[themeVar]?.fontColor);
-    this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
-  }
-
-  getConfigurators() {
-    const self = this;
-    return [
-      {
-        name: 'Builder Configurator',
-        target: 'Builders',
-        getActions: () => {
-          return this._getActions()
-        },
-        getData: this.getData.bind(this),
-        setData: async (data: IData) => {
-          const defaultData = dataJson.defaultBuilderData as any
-          defaultData.date = moment().endOf('days').format(defaultDateTimeFormat)
-          await this.setData({ ...defaultData, ...data })
-        },
-        getTag: this.getTag.bind(this),
-        setTag: this.setTag.bind(this)
-      },
-      {
-        name: 'Emdedder Configurator',
-        target: 'Embedders',
-        getActions: () => {
-          return this._getActions()
-        },
-        getLinkParams: () => {
-          const data = this.data || {};
-          return {
-            data: window.btoa(JSON.stringify(data))
-          }
-        },
-        setLinkParams: async (params: any) => {
-          if (params.data) {
-            const utf8String = decodeURIComponent(params.data);
-            const decodedString = window.atob(utf8String);
-            const newData = JSON.parse(decodedString);
-            let resultingData = {
-              ...self.data,
-              ...newData
-            };
-            await this.setData(resultingData);
-          }
-        },
-        getData: this.getData.bind(this),
-        setData: this.setData.bind(this),
-        getTag: this.getTag.bind(this),
-        setTag: this.setTag.bind(this)
+  init() {
+    this.initModel();
+    super.init();
+    const width = this.getAttribute('width', true);
+    const height = this.getAttribute('height', true);
+    this.setTag({
+      width: width ? this.width : 'auto',
+      height: height ? this.height : 'auto'
+    });
+    const lazyLoad = this.getAttribute('lazyLoad', true, false);
+    if (!lazyLoad) {
+      const name = this.getAttribute('name', true);
+      const targetTime = this.getAttribute('targetTime', true);
+      const showUTC = this.getAttribute('showUTC', true, false);
+      const units = this.getAttribute('units', true, unitOptions[0]);
+      const showHeader = this.getAttribute('showHeader', true, false);
+      const showFooter = this.getAttribute('showFooter', true, false);
+      if (targetTime) {
+        this.setData({
+          name,
+          targetTime,
+          showUTC,
+          units,
+          showHeader,
+          showFooter
+        });
       }
-    ]
-  }
-
-  private _getActions() {
-    const actions = [
-      {
-        name: 'Edit',
-        icon: 'edit',
-        command: (builder: any, userInputData: any) => {
-          let oldData = { date: '' }
-          let oldTag = {}
-          return {
-            execute: () => {
-              oldData = JSON.parse(JSON.stringify(this.data))
-              const {
-                date,
-                name,
-                showUTC,
-                units,
-                ...themeSettings
-              } = userInputData
-
-              const generalSettings = {
-                date,
-                name,
-                showUTC,
-                units
-              }
-              if (generalSettings.date !== undefined) this.data.date = generalSettings.date
-              if (generalSettings.name !== undefined) this.data.name = generalSettings.name
-              if (generalSettings.showUTC !== undefined) this.data.showUTC = generalSettings.showUTC
-              if (generalSettings.units !== undefined) this.data.units = generalSettings.units
-              this.refreshPage()
-              if (builder?.setData) builder.setData(this.data)
-              this.height = 'auto'
-
-              oldTag = JSON.parse(JSON.stringify(this.tag))
-              if (builder?.setTag) builder.setTag(themeSettings)
-              else this.setTag(themeSettings)
-              if (this.dappContainer) this.dappContainer.setTag(themeSettings)
-            },
-            undo: () => {
-              this.data = JSON.parse(JSON.stringify(oldData))
-              this.refreshPage()
-              if (builder?.setData) builder.setData(this.data)
-              this.height = 'auto'
-
-              this.tag = JSON.parse(JSON.stringify(oldTag))
-              if (builder?.setTag) builder.setTag(this.tag)
-              else this.setTag(this.tag)
-              if (this.dappContainer) this.dappContainer.setTag(this.tag)
-            },
-            redo: () => { },
-          }
-        },
-        userInputDataSchema: formSchema.dataSchema,
-        userInputUISchema: formSchema.uiSchema
-      }
-    ]
-    return actions
+    }
   }
 
   render() {
     return (
       <i-scom-dapp-container id="dappContainer">
         <i-vstack
-          verticalAlignment='center'
-          horizontalAlignment='center'
-          class='text-center'
-          padding={{ left: '1rem', right: '1rem', top: '1.5rem', bottom: '1.5rem' }}
+          verticalAlignment="center"
+          horizontalAlignment="center"
+          class={textCenterStyle}
+          padding={{ left: '0.5rem', right: '0.5rem', top: '1rem', bottom: '1rem' }}
           background={{ color: Theme.background.main }}
         >
           <i-label
-            id='lbName'
+            id="lbName"
             font={{ size: '2rem', bold: true, color: Theme.text.primary }}
-            width='100%'
+            width="100%"
             margin={{ bottom: '1rem' }}
-          ></i-label>
-          <i-label id='lbUTC' visible={false} width='100%' font={{ color: Theme.text.primary }}></i-label>
+            mediaQueries={[
+              {
+                maxWidth: '768px',
+                properties: {
+                  font: { size: '1.25rem' }
+                }
+              }
+            ]}
+          />
+          <i-label
+            id="lbUTC"
+            visible={false}
+            width="100%"
+            font={{ color: Theme.text.primary }}
+            margin={{ bottom: '1rem' }}
+          />
           <i-hstack
-            id='pnlCounter'
-            gap='3rem'
-            margin={{ top: '1rem' }}
-            horizontalAlignment='center'
-            verticalAlignment='center'
-          ></i-hstack>
+            id="pnlCounter"
+            gap="2.5rem"
+            horizontalAlignment="center"
+            verticalAlignment="center"
+            overflow="auto"
+            wrap="wrap"
+            mediaQueries={[
+              {
+                maxWidth: '768px',
+                properties: {
+                  gap: '1.25rem'
+                }
+              }
+            ]}
+          />
         </i-vstack>
       </i-scom-dapp-container>
     )
